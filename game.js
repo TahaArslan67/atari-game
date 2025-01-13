@@ -214,9 +214,10 @@ function startMultiplayer() {
     }
 
     // Socket.IO bağlantısını kur
-    ws = io({
-        path: '/api/socketio',
-        addTrailingSlash: false
+    const serverUrl = 'https://atari-game-production.up.railway.app';  // Railway URL'sini buraya yazın
+    ws = io(serverUrl, {
+        transports: ['websocket'],
+        upgrade: false
     });
 
     waitingForOpponent = true;
