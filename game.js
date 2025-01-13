@@ -210,15 +210,17 @@ function drawOpponentPaddle() {
 // WebSocket bağlantısını başlat
 function startMultiplayer() {
     if (ws) {
-        ws.close();
+        ws.disconnect();
     }
 
-    const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsUrl = `${wsProtocol}//${window.location.host}/ws`;
-    ws = new WebSocket(wsUrl);
+    // Socket.IO bağlantısını kur
+    ws = io(window.location.origin, {
+        path: '/api/socketio'
+    });
+
     waitingForOpponent = true;
 
-    ws.onopen = () => {
+    ws.on('connect', () => {
         const urlParams = new URLSearchParams(window.location.search);
         let roomId = urlParams.get('room');
         
@@ -227,84 +229,75 @@ function startMultiplayer() {
             window.history.pushState({}, '', `?room=${roomId}`);
         }
 
-        ws.send(JSON.stringify({
-            type: 'join',
+        ws.emit('join', {
             roomId: roomId
-        }));
-    };
+        });
+    });
 
-    ws.onmessage = (event) => {
-        const data = JSON.parse(event.data);
-
-        switch (data.type) {
-            case 'init':
-                playerId = data.playerId;
-                if (playerId === 2) {
-                    paddle.y = 50;
-                    paddle.color = '#ff0000';
-                    opponentPaddle.y = 550;
-                    opponentPaddle.color = '#fff';
-                    ball.dy = ball.speed;
-                } else {
-                    paddle.y = 550;
-                    paddle.color = '#fff';
-                    opponentPaddle.y = 50;
-                    opponentPaddle.color = '#ff0000';
-                    ball.dy = -ball.speed;
-                }
-                break;
-
-            case 'start':
-                waitingForOpponent = false;
-                isMultiplayer = true;
-                resetGame();
-                break;
-
-            case 'opponent_update':
-                opponentPaddle.x = data.position;
-                break;
-
-            case 'ball_sync':
-                if (playerId === 2) {
-                    ball.x = data.ball.x;
-                    ball.y = data.ball.y;
-                    ball.dx = data.ball.dx;
-                    ball.dy = data.ball.dy;
-                    ball.speed = data.ball.speed;
-                }
-                break;
-
-            case 'opponent_left':
-                alert('Rakip oyundan ayrıldı!');
-                isMultiplayer = false;
-                waitingForOpponent = false;
-                resetGame();
-                break;
+    ws.on('init', (data) => {
+        playerId = data.playerId;
+        if (playerId === 2) {
+            paddle.y = 50;
+            paddle.color = '#ff0000';
+            opponentPaddle.y = 550;
+            opponentPaddle.color = '#fff';
+            ball.dy = ball.speed;
+        } else {
+            paddle.y = 550;
+            paddle.color = '#fff';
+            opponentPaddle.y = 50;
+            opponentPaddle.color = '#ff0000';
+            ball.dy = -ball.speed;
         }
-    };
+    });
 
-    ws.onclose = () => {
+    ws.on('start', () => {
+        waitingForOpponent = false;
+        isMultiplayer = true;
+        resetGame();
+    });
+
+    ws.on('opponent_update', (data) => {
+        opponentPaddle.x = data.position;
+    });
+
+    ws.on('ball_sync', (data) => {
+        if (playerId === 2) {
+            ball.x = data.ball.x;
+            ball.y = data.ball.y;
+            ball.dx = data.ball.dx;
+            ball.dy = data.ball.dy;
+            ball.speed = data.ball.speed;
+        }
+    });
+
+    ws.on('opponent_left', () => {
+        alert('Rakip oyundan ayrıldı!');
+        isMultiplayer = false;
+        waitingForOpponent = false;
+        resetGame();
+    });
+
+    ws.on('disconnect', () => {
         isMultiplayer = false;
         waitingForOpponent = false;
         alert('Sunucu bağlantısı kesildi!');
-    };
+    });
 }
 
 // Paddle pozisyonunu gönder
 function sendPaddlePosition() {
-    if (ws && ws.readyState === WebSocket.OPEN) {
-        ws.send(JSON.stringify({
-            type: 'update',
+    if (ws && ws.connected) {
+        ws.emit('paddle_update', {
             position: paddle.x
-        }));
+        });
     }
 }
 
 // Top pozisyonunu gönder
 function sendBallPosition() {
-    if (ws && ws.readyState === WebSocket.OPEN && playerId === 1) {
-        ws.send(JSON.stringify({
-            type: 'ball_update',
+    if (ws && ws.connected && playerId === 1) {
+        ws.emit('ball_update', {
             ball: {
                 x: ball.x,
                 y: ball.y,
@@ -312,7 +305,7 @@ function sendBallPosition() {
                 dy: ball.dy,
                 speed: ball.speed
             }
-        }));
+        });
     }
 }
 

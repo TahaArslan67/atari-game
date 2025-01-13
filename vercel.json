@@ -4,10 +4,11 @@
         { "src": "*.html", "use": "@vercel/static" },
         { "src": "*.css", "use": "@vercel/static" },
         { "src": "*.js", "use": "@vercel/static" },
-        { "src": "api/*.js", "use": "@vercel/node" }
+        { "src": "api/server.js", "use": "@vercel/node" }
     ],
     "routes": [
-        { "src": "/", "dest": "/index.html" },
-        { "src": "/ws", "dest": "/api/websocket.js" }
+        { "src": "/socket.io/(.*)", "dest": "/api/server.js" },
+        { "src": "/api/socketio", "dest": "/api/server.js" },
+        { "src": "/(.*)", "dest": "/$1" }
     ]
 } 
