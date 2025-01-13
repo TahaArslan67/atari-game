@@ -43,8 +43,17 @@ const opponentPaddle = {
 let isMultiplayer = false;
 let waitingForOpponent = false;
 
+// Ses efektleri
+const paddleHitSound = new Audio('https://raw.githubusercontent.com/TahaArslan67/atari-game/master/sounds/paddle_hit.wav');
+const wallHitSound = new Audio('https://raw.githubusercontent.com/TahaArslan67/atari-game/master/sounds/wall_hit.wav');
+const scoreSound = new Audio('https://raw.githubusercontent.com/TahaArslan67/atari-game/master/sounds/score.wav');
+
+let isSoundEnabled = true;
+let player1Score = 0;
+let player2Score = 0;
+
 // Top hızlanma oranı
-const BALL_SPEED_INCREASE = 1.1;
+const BALL_SPEED_INCREASE = 1.05; // %5 artış
 const MAX_BALL_SPEED = 15;
 
 // Tuş kontrollerini dinle
@@ -90,6 +99,9 @@ function moveBall() {
     // Duvar çarpışma kontrolü
     if (nextX + ball.size > canvas.width || nextX - ball.size < 0) {
         ball.dx *= -1;
+        if (isSoundEnabled) {
+            wallHitSound.play();
+        }
     } else {
         ball.x = nextX;
     }
@@ -98,13 +110,12 @@ function moveBall() {
     if (nextY - ball.size < 0) {
         if (!isMultiplayer) {
             ball.dy *= -1;
-        } else {
-            // Üst sınıra çarpma
-            if (playerId === 1) {
-                showWinner('Alt Oyuncu Kazandı!');
-            } else {
-                showWinner('Kaybettiniz!');
+            if (isSoundEnabled) {
+                wallHitSound.play();
             }
+        } else {
+            // Üst sınıra çarpma (Player 2 kaybetti)
+            updateScore(1);
             resetGame();
             return;
         }
@@ -115,12 +126,8 @@ function moveBall() {
         if (!isMultiplayer) {
             resetGame();
         } else {
-            // Alt sınıra çarpma
-            if (playerId === 1) {
-                showWinner('Kazandınız!');
-            } else {
-                showWinner('Üst Oyuncu Kazandı!');
-            }
+            // Alt sınıra çarpma (Player 1 kaybetti)
+            updateScore(2);
             resetGame();
             return;
         }
@@ -133,6 +140,10 @@ function moveBall() {
         nextX + ball.size > currentPaddle.x &&
         nextX - ball.size < currentPaddle.x + currentPaddle.width) {
         
+        if (isSoundEnabled) {
+            paddleHitSound.play();
+        }
+
         // Top yönünü değiştir
         ball.dy = currentPaddle === paddle ? -ball.speed : ball.speed;
         
@@ -218,11 +229,28 @@ function drawOpponentPaddle() {
     }
 }
 
+// Skor tablosunu güncelle
+function updateScore(winner) {
+    if (winner === 1) {
+        player1Score++;
+    } else if (winner === 2) {
+        player2Score++;
+    }
+    
+    if (isSoundEnabled) {
+        scoreSound.play();
+    }
+}
+
 // WebSocket bağlantısını başlat
 function startMultiplayer() {
     if (ws) {
         ws.disconnect();
     }
+
+    // Skorları sıfırla
+    player1Score = 0;
+    player2Score = 0;
 
     // Socket.IO bağlantısını kur
     const serverUrl = 'https://atari-game-production.up.railway.app';
@@ -363,20 +391,22 @@ function update() {
         return;
     }
 
-    // Top hızını göster (çok oyunculu modda)
+    // Skor tablosunu göster
     if (isMultiplayer) {
         ctx.fillStyle = '#fff';
+        ctx.font = '24px Arial';
+        ctx.textAlign = 'center';
+        
+        // Player 1 skoru (üst)
+        ctx.fillText(`Player 1: ${player1Score}`, canvas.width / 4, 30);
+        
+        // Player 2 skoru (alt)
+        ctx.fillText(`Player 2: ${player2Score}`, canvas.width * 3 / 4, 30);
+        
+        // Top hızı
         ctx.font = '16px Arial';
         ctx.textAlign = 'left';
-        ctx.fillText(`Top Hızı: ${Math.round(ball.speed * 10) / 10}`, 10, 20);
-    }
-
-    // Kazanan mesajını göster
-    if (showWinnerMessage) {
-        ctx.fillStyle = '#fff';
-        ctx.font = 'bold 32px Arial';
-        ctx.textAlign = 'center';
-        ctx.fillText(winnerMessage, canvas.width / 2, 100);
+        ctx.fillText(`Top Hızı: ${Math.round(ball.speed * 10) / 10}`, 10, 60);
     }
 
     drawBall();
@@ -401,5 +431,16 @@ multiplayerBtn.textContent = 'Çoklu Oyuncu';
 multiplayerBtn.style.marginTop = '10px';
 multiplayerBtn.onclick = startMultiplayer;
 gameContainer.appendChild(multiplayerBtn);
+
+// Ses açma/kapama butonu ekle
+const soundBtn = document.createElement('button');
+soundBtn.textContent = 'Ses: Açık';
+soundBtn.style.marginTop = '10px';
+soundBtn.style.marginLeft = '10px';
+soundBtn.onclick = () => {
+    isSoundEnabled = !isSoundEnabled;
+    soundBtn.textContent = `Ses: ${isSoundEnabled ? 'Açık' : 'Kapalı'}`;
+};
+gameContainer.appendChild(soundBtn);
 
 update(); 
