@@ -169,10 +169,20 @@ function resetGame() {
     ball.speed = 4;
     
     if (isMultiplayer) {
-        ball.dx = ball.speed;
-        ball.dy = playerId === 1 ? -ball.speed : ball.speed;
+        // Top, kaybeden oyuncudan kazanan oyuncuya doğru gider
+        if (ball.y <= 0) { // Üst oyuncu kaybetti
+            ball.dy = ball.speed; // Top aşağı gider (alt oyuncuya doğru)
+            ball.dx = (Math.random() * 2 - 1) * ball.speed; // Rastgele x yönü
+        } else if (ball.y >= canvas.height) { // Alt oyuncu kaybetti
+            ball.dy = -ball.speed; // Top yukarı gider (üst oyuncuya doğru)
+            ball.dx = (Math.random() * 2 - 1) * ball.speed; // Rastgele x yönü
+        } else {
+            // Oyun yeni başlıyorsa
+            ball.dx = (Math.random() * 2 - 1) * ball.speed;
+            ball.dy = playerId === 1 ? -ball.speed : ball.speed;
+        }
     } else {
-        ball.dx = ball.speed;
+        ball.dx = (Math.random() * 2 - 1) * ball.speed;
         ball.dy = -ball.speed;
     }
 
