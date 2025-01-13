@@ -214,13 +214,15 @@ function startMultiplayer() {
     }
 
     // Socket.IO bağlantısını kur
-    ws = io(window.location.origin, {
-        path: '/api/socketio'
+    ws = io({
+        path: '/api/socketio',
+        addTrailingSlash: false
     });
 
     waitingForOpponent = true;
 
     ws.on('connect', () => {
+        console.log('Sunucuya bağlandı');
         const urlParams = new URLSearchParams(window.location.search);
         let roomId = urlParams.get('room');
         
@@ -232,6 +234,11 @@ function startMultiplayer() {
         ws.emit('join', {
             roomId: roomId
         });
+    });
+
+    ws.on('connect_error', (error) => {
+        console.error('Bağlantı hatası:', error);
+        alert('Sunucuya bağlanılamadı!');
     });
 
     ws.on('init', (data) => {

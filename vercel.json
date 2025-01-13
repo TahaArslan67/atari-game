@@ -7,8 +7,21 @@
         { "src": "api/server.js", "use": "@vercel/node" }
     ],
     "routes": [
-        { "src": "/socket.io/(.*)", "dest": "/api/server.js" },
-        { "src": "/api/socketio", "dest": "/api/server.js" },
-        { "src": "/(.*)", "dest": "/$1" }
+        { 
+            "src": "/api/socketio",
+            "dest": "api/server.js"
+        },
+        { 
+            "src": "/socket.io/(.*)",
+            "dest": "api/server.js"
+        },
+        {
+            "src": "/api/socketio/(.*)",
+            "dest": "api/server.js"
+        },
+        { 
+            "src": "/(.*)",
+            "dest": "/$1"
+        }
     ]
 } 
