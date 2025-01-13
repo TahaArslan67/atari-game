@@ -101,9 +101,9 @@ function moveBall() {
         } else {
             // Üst sınıra çarpma
             if (playerId === 1) {
-                alert('Alt oyuncu kazandı!');
+                showWinner('Alt Oyuncu Kazandı!');
             } else {
-                alert('Kaybettiniz!');
+                showWinner('Kaybettiniz!');
             }
             resetGame();
             return;
@@ -117,9 +117,9 @@ function moveBall() {
         } else {
             // Alt sınıra çarpma
             if (playerId === 1) {
-                alert('Kazandınız!');
+                showWinner('Kazandınız!');
             } else {
-                alert('Üst oyuncu kazandı!');
+                showWinner('Üst Oyuncu Kazandı!');
             }
             resetGame();
             return;
@@ -328,6 +328,26 @@ function sendBallPosition() {
     }
 }
 
+let winnerMessage = '';
+let showWinnerMessage = false;
+let messageTimer = null;
+
+function showWinner(message) {
+    winnerMessage = message;
+    showWinnerMessage = true;
+    
+    // Önceki zamanlayıcıyı temizle
+    if (messageTimer) {
+        clearTimeout(messageTimer);
+    }
+    
+    // 3 saniye sonra mesajı kaldır
+    messageTimer = setTimeout(() => {
+        showWinnerMessage = false;
+        winnerMessage = '';
+    }, 3000);
+}
+
 // Oyun döngüsü
 function update() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -349,6 +369,14 @@ function update() {
         ctx.font = '16px Arial';
         ctx.textAlign = 'left';
         ctx.fillText(`Top Hızı: ${Math.round(ball.speed * 10) / 10}`, 10, 20);
+    }
+
+    // Kazanan mesajını göster
+    if (showWinnerMessage) {
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 32px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText(winnerMessage, canvas.width / 2, 100);
     }
 
     drawBall();
