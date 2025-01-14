@@ -46,9 +46,9 @@ let isMultiplayer = false;
 let waitingForOpponent = false;
 
 // Ses efektleri
-const paddleHitSound = new Audio('https://raw.githubusercontent.com/TahaArslan67/atari-game/master/sounds/paddle_hit.wav');
-const wallHitSound = new Audio('https://raw.githubusercontent.com/TahaArslan67/atari-game/master/sounds/wall_hit.wav');
-const scoreSound = new Audio('https://raw.githubusercontent.com/TahaArslan67/atari-game/master/sounds/score.wav');
+const paddleHitSound = new Audio('https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3');
+const wallHitSound = new Audio('https://assets.mixkit.co/active_storage/sfx/146/146-preview.mp3');
+const scoreSound = new Audio('https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3');
 
 let isSoundEnabled = true;
 let player1Score = 0;
@@ -400,7 +400,14 @@ function update() {
     }
 
     // Skor tablosunu göster
-    if (isMultiplayer) {
+    if (!isMultiplayer) {
+        // Tek oyunculu mod skoru
+        ctx.fillStyle = '#fff';
+        ctx.font = '24px Arial';
+        ctx.textAlign = 'left';
+        ctx.fillText(`Skor: ${score}`, 10, 30);
+    } else {
+        // Çok oyunculu mod skoru
         ctx.fillStyle = '#fff';
         ctx.font = '24px Arial';
         ctx.textAlign = 'center';
