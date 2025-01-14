@@ -241,12 +241,13 @@ function updateScore(winner) {
         ball.lastWinner = 2;
     }
     
-    // Skor güncellemesini diğer oyuncuya gönder
+    // Skor güncellemesini tüm oyunculara gönder
     if (ws && ws.connected) {
         ws.emit('score_update', {
             player1Score: player1Score,
             player2Score: player2Score,
-            lastWinner: ball.lastWinner
+            lastWinner: ball.lastWinner,
+            timestamp: Date.now()
         });
     }
     
@@ -359,6 +360,7 @@ function startMultiplayer() {
 
     // Skor güncelleme olayını dinle
     ws.on('score_update', (data) => {
+        console.log('Skor güncelleme alındı:', data); // Debug log
         player1Score = data.player1Score;
         player2Score = data.player2Score;
         ball.lastWinner = data.lastWinner;
@@ -443,8 +445,16 @@ function update() {
         ctx.fillStyle = '#fff';
         ctx.font = '24px Arial';
         ctx.textAlign = 'center';
-        ctx.fillText(`Player 1: ${player1Score}`, canvas.width / 4, 30);
-        ctx.fillText(`Player 2: ${player2Score}`, canvas.width * 3 / 4, 30);
+        
+        // Player 2 için skorları ters çevir
+        if (playerId === 2) {
+            ctx.fillText(`Player 2: ${player2Score}`, canvas.width / 4, 30);
+            ctx.fillText(`Player 1: ${player1Score}`, canvas.width * 3 / 4, 30);
+        } else {
+            ctx.fillText(`Player 1: ${player1Score}`, canvas.width / 4, 30);
+            ctx.fillText(`Player 2: ${player2Score}`, canvas.width * 3 / 4, 30);
+        }
+        
         ctx.font = '16px Arial';
         ctx.textAlign = 'left';
         ctx.fillText(`Top Hızı: ${Math.round(ball.speed * 10) / 10}`, 10, 60);
