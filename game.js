@@ -136,13 +136,15 @@ function moveBall() {
 
     // Paddle çarpışma kontrolü (hem üst hem alt paddle için)
     const currentPaddle = nextY > canvas.height / 2 ? paddle : opponentPaddle;
-    if (nextY + ball.size > currentPaddle.y &&
-        nextY - ball.size < currentPaddle.y + currentPaddle.height &&
+    
+    // Çarpışma toleransını artır
+    const paddleCollisionTolerance = 5;
+    if (nextY + ball.size + paddleCollisionTolerance > currentPaddle.y &&
+        nextY - ball.size - paddleCollisionTolerance < currentPaddle.y + currentPaddle.height &&
         nextX + ball.size > currentPaddle.x &&
         nextX - ball.size < currentPaddle.x + currentPaddle.width) {
         
         playSound(hittingSound);
-        
 
         // Top yönünü değiştir
         ball.dy = currentPaddle === paddle ? -ball.speed : ball.speed;
@@ -259,7 +261,11 @@ function startMultiplayer() {
     const serverUrl = 'https://pleasing-radiance-production.up.railway.app';
     ws = io(serverUrl, {
         transports: ['websocket'],
-        upgrade: false
+        upgrade: false,
+        reconnection: true,
+        reconnectionDelay: 1000,
+        reconnectionDelayMax: 5000,
+        timeout: 20000
     });
 
     waitingForOpponent = true;
@@ -335,25 +341,27 @@ function startMultiplayer() {
     });
 }
 
-// Paddle pozisyonunu gönder
+// Paddle pozisyonunu daha sık gönder
 function sendPaddlePosition() {
     if (ws && ws.connected) {
-        ws.emit('paddle_update', {
-            position: paddle.x
+        ws.volatile.emit('paddle_update', {
+            position: paddle.x,
+            timestamp: Date.now()
         });
     }
 }
 
-// Top pozisyonunu gönder
+// Top pozisyonunu daha sık gönder
 function sendBallPosition() {
     if (ws && ws.connected && playerId === 1) {
-        ws.emit('ball_update', {
+        ws.volatile.emit('ball_update', {
             ball: {
                 x: ball.x,
                 y: ball.y,
                 dx: ball.dx,
                 dy: ball.dy,
-                speed: ball.speed
+                speed: ball.speed,
+                timestamp: Date.now()
             }
         });
     }
@@ -378,6 +386,9 @@ function showWinner(message) {
         winnerMessage = '';
     }, 3000);
 }
+
+// Zaman takibi için değişken
+let lastUpdateTime = Date.now();
 
 // Oyun döngüsü
 function update() {
@@ -427,8 +438,12 @@ function update() {
     moveBall();
 
     if (isMultiplayer) {
-        sendPaddlePosition();
-        sendBallPosition();
+        // Daha sık güncelleme gönder
+        if (Date.now() - lastUpdateTime > 16) { // ~60fps
+            sendPaddlePosition();
+            sendBallPosition();
+            lastUpdateTime = Date.now();
+        }
     }
 
     requestAnimationFrame(update);
