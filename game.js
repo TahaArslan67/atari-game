@@ -54,8 +54,28 @@ let player1Score = 0;
 let player2Score = 0;
 
 // Top hızlanma oranı
-const BALL_SPEED_INCREASE = 1.05; // %5 artış
+const BALL_SPEED_INCREASE = 1.075; // %7.5 artış
 const MAX_BALL_SPEED = 15;
+
+// Mesaj gösterimi için değişkenler
+let gameMessage = '';
+let showGameMessage = false;
+let messageTimer = null;
+
+// Mesaj gösterme fonksiyonu
+function showMessage(message, duration = 3000) {
+    gameMessage = message;
+    showGameMessage = true;
+    
+    if (messageTimer) {
+        clearTimeout(messageTimer);
+    }
+    
+    messageTimer = setTimeout(() => {
+        showGameMessage = false;
+        gameMessage = '';
+    }, duration);
+}
 
 // Tuş kontrollerini dinle
 document.addEventListener('keydown', keyDown);
@@ -310,7 +330,7 @@ function startMultiplayer() {
     });
 
     ws.on('connect_error', (error) => {
-        alert('Sunucuya bağlanılamadı!');
+        showMessage('Sunucuya bağlanılamadı!');
     });
 
     ws.on('init', (data) => {
@@ -356,7 +376,7 @@ function startMultiplayer() {
     });
 
     ws.on('opponent_left', () => {
-        alert('Rakip oyundan ayrıldı!');
+        showMessage('Rakip oyundan ayrıldı!');
         isMultiplayer = false;
         waitingForOpponent = false;
         resetGame();
@@ -365,7 +385,7 @@ function startMultiplayer() {
     ws.on('disconnect', () => {
         isMultiplayer = false;
         waitingForOpponent = false;
-        alert('Sunucu bağlantısı kesildi!');
+        showMessage('Sunucu bağlantısı kesildi!');
     });
 
     // Skor güncelleme olayını dinle
@@ -404,18 +424,15 @@ function sendBallPosition() {
 
 let winnerMessage = '';
 let showWinnerMessage = false;
-let messageTimer = null;
 
 function showWinner(message) {
     winnerMessage = message;
     showWinnerMessage = true;
     
-    // Önceki zamanlayıcıyı temizle
     if (messageTimer) {
         clearTimeout(messageTimer);
     }
     
-    // 3 saniye sonra mesajı kaldır
     messageTimer = setTimeout(() => {
         showWinnerMessage = false;
         winnerMessage = '';
@@ -488,6 +505,17 @@ function update() {
     if (isMultiplayer && deltaTime >= 16) { // ~60fps
         sendPaddlePosition();
         lastUpdateTime = currentTime;
+    }
+
+    // Mesaj gösterimi
+    if (showGameMessage) {
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+        ctx.fillRect(0, canvas.height / 2 - 50, canvas.width, 100);
+        
+        ctx.fillStyle = '#fff';
+        ctx.font = '24px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText(gameMessage, canvas.width / 2, canvas.height / 2);
     }
 
     requestAnimationFrame(update);
