@@ -1,161 +1,189 @@
 const express = require('express');
-const { createServer } = require('http');
-const { Server } = require('socket.io');
+const app = express();
+const http = require('http').createServer(app);
+const io = require('socket.io')(http, {
+    cors: {
+        origin: "*",
+        methods: ["GET", "POST"]
+    },
+    transports: ['polling', 'websocket']
+});
 const cors = require('cors');
 
-const app = express();
-const httpServer = createServer(app);
+app.use(cors());
 
-// Debug mesajları
-const debug = (...args) => {
-    console.log(new Date().toISOString(), ...args);
-};
+// Odaları saklamak için dizi
+const rooms = [];
 
-debug('Server starting...');
-
-// Express ayarları
-app.set('trust proxy', true);
-app.disable('x-powered-by');
-
-// CORS ayarları
-app.use(cors({
-    origin: '*',
-    methods: ['GET', 'POST'],
-    credentials: true
-}));
-
-// Socket.IO kurulumu
-const io = new Server(httpServer, {
-    cors: {
-        origin: '*',
-        methods: ['GET', 'POST'],
-        credentials: true
-    },
-    transports: ['websocket', 'polling'],
-    pingTimeout: 60000,
-    pingInterval: 25000
-});
-
-// Basit endpoint'ler
+// Ana endpoint
 app.get('/', (req, res) => {
-    debug('Root endpoint called');
-    res.send('Server is running');
+    res.send('Atari Game Server');
 });
-
-app.get('/health', (req, res) => {
-    debug('Health check endpoint called');
-    res.json({ 
-        status: 'ok',
-        timestamp: new Date().toISOString(),
-        uptime: process.uptime(),
-        port: process.env.PORT || 3000,
-        env: process.env.NODE_ENV
-    });
-});
-
-// Hata yakalama
-app.use((err, req, res, next) => {
-    debug('Error:', err);
-    res.status(500).json({ error: 'Internal server error' });
-});
-
-// Oyun odaları
-const rooms = new Map();
 
 // Socket.IO olayları
 io.on('connection', (socket) => {
-    debug('New connection:', socket.id);
+    let currentRoom = null;
 
-    socket.on('join', (data) => {
-        try {
-            debug('Join attempt:', { socketId: socket.id, roomId: data.roomId });
-            const roomId = data.roomId;
-            
-            if (!rooms.has(roomId)) {
-                rooms.set(roomId, [socket.id]);
-                socket.join(roomId);
-                socket.emit('init', { playerId: 1 });
-                debug('Created new room:', roomId);
-            } else {
-                const room = rooms.get(roomId);
-                if (room.length < 2) {
-                    room.push(socket.id);
-                    socket.join(roomId);
-                    socket.emit('init', { playerId: 2 });
-                    io.to(roomId).emit('start');
-                    debug('Joined existing room:', roomId);
-                } else {
-                    debug('Room full:', roomId);
-                    socket.emit('error', { message: 'Room is full' });
-                }
-            }
-        } catch (error) {
-            debug('Error in join:', error);
-            socket.emit('error', { message: 'Failed to join room' });
-        }
-    });
-
-    socket.on('paddle_update', (data) => {
-        try {
-            const rooms = Array.from(socket.rooms);
-            if (rooms.length > 1) {
-                const roomId = rooms[1];
-                socket.broadcast.to(roomId).emit('opponent_update', data);
-            }
-        } catch (error) {
-            debug('Error in paddle_update:', error);
-        }
-    });
-
-    socket.on('ball_update', (data) => {
-        try {
-            const rooms = Array.from(socket.rooms);
-            if (rooms.length > 1) {
-                const roomId = rooms[1];
-                socket.broadcast.to(roomId).emit('ball_sync', data);
-            }
-        } catch (error) {
-            debug('Error in ball_update:', error);
-        }
-    });
-
-    socket.on('disconnect', () => {
-        debug('Client disconnected:', socket.id);
-        try {
-            rooms.forEach((players, roomId) => {
-                const index = players.indexOf(socket.id);
-                if (index !== -1) {
-                    players.splice(index, 1);
-                    if (players.length === 0) {
-                        rooms.delete(roomId);
-                        debug('Room deleted:', roomId);
-                    } else {
-                        io.to(roomId).emit('opponent_left');
-                        debug('Opponent left room:', roomId);
-                    }
-                }
+    // Mevcut odaları kontrol et
+    socket.on('check_rooms', () => {
+        // Boş yer olan bir oda bul
+        const availableRoom = rooms.find(r => r.players.length === 1);
+        
+        if (availableRoom) {
+            socket.emit('rooms_status', {
+                availableRoom: true,
+                roomId: availableRoom.id
             });
-        } catch (error) {
-            debug('Error in disconnect:', error);
+        } else {
+            socket.emit('rooms_status', {
+                availableRoom: false
+            });
         }
     });
 
-    socket.on('error', (error) => {
-        debug('Socket error:', error);
+    // Odaya katılma isteği
+    socket.on('join', (data) => {
+        const { roomId } = data;
+        
+        // Mevcut odayı bul veya yeni oda oluştur
+        let room = rooms.find(r => r.id === roomId);
+        if (!room) {
+            room = {
+                id: roomId,
+                players: [],
+                scores: {
+                    player1: 0,
+                    player2: 0
+                }
+            };
+            rooms.push(room);
+        }
+
+        // Odada yer varsa oyuncuyu ekle
+        if (room.players.length < 2) {
+            // Eğer oyuncu zaten odadaysa, tekrar ekleme
+            if (!room.players.includes(socket.id)) {
+                room.players.push(socket.id);
+                socket.join(roomId);
+                currentRoom = roomId;
+
+                // Oyuncu numarasını belirle
+                const playerId = room.players.length;
+                socket.emit('init', { playerId });
+
+                console.log(`Player ${playerId} joined room ${roomId}`);
+
+                // İki oyuncu da hazırsa oyunu başlat
+                if (room.players.length === 2) {
+                    io.to(roomId).emit('start');
+                    console.log(`Game started in room ${roomId}`);
+                }
+            }
+        } else {
+            socket.emit('error', { message: 'Oda dolu!' });
+        }
+    });
+
+    // Paddle pozisyonu güncelleme
+    socket.on('paddle_update', (data) => {
+        if (!currentRoom) return;
+        
+        const room = rooms.find(r => r.id === currentRoom);
+        if (room) {
+            socket.to(currentRoom).emit('paddle_update', {
+                position: data.position,
+                timestamp: data.timestamp
+            });
+        }
+    });
+
+    // Top pozisyonu güncelleme
+    socket.on('ball_update', (data) => {
+        if (!currentRoom) return;
+        
+        const room = rooms.find(r => r.id === currentRoom);
+        if (room) {
+            socket.to(currentRoom).emit('ball_update', {
+                x: data.x,
+                y: data.y,
+                dx: data.dx,
+                dy: data.dy,
+                speed: data.speed,
+                isWaiting: data.isWaiting,
+                timestamp: data.timestamp
+            });
+        }
+    });
+
+    // Skor güncelleme
+    socket.on('score_update', (data) => {
+        // Sadece Player 1'den gelen skor güncellemelerini kabul et
+        if (rooms.some(r => r.players[0] === socket.id)) {
+            const room = rooms.find(r => r.players.includes(socket.id));
+            if (room) {
+                // Kazanana göre skoru güncelle
+                if (data.winner === 1) {
+                    room.player1Score = (room.player1Score || 0) + 1;
+                } else if (data.winner === 2) {
+                    room.player2Score = (room.player2Score || 0) + 1;
+                }
+
+                // Güncellenmiş skorları gönder
+                io.in(room.id).emit('score_update', {
+                    winner: data.winner,
+                    player1Score: room.player1Score,
+                    player2Score: room.player2Score,
+                    timestamp: Date.now()
+                });
+                
+                console.log(`Room ${room.id} skor güncellendi - P1: ${room.player1Score}, P2: ${room.player2Score}`);
+            }
+        }
+    });
+
+    // Yeni oda oluşturulduğunda skorları sıfırla
+    socket.on('create_room', () => {
+        const room = {
+            id: generateRoomId(),
+            players: [socket.id],
+            player1Score: 0,
+            player2Score: 0
+        };
+        rooms.push(room);
+        socket.join(room.id);
+        socket.emit('room_created', { roomId: room.id });
+    });
+
+    // Bağlantı koptuğunda
+    socket.on('disconnect', () => {
+        if (!currentRoom) return;
+
+        const room = rooms.find(r => r.id === currentRoom);
+        if (room) {
+            // Oyuncuyu odadan çıkar
+            room.players = room.players.filter(id => id !== socket.id);
+            
+            // Diğer oyuncuya haber ver
+            socket.to(currentRoom).emit('opponent_left');
+
+            console.log(`Player left room ${currentRoom}`);
+
+            // Oda boşsa sil
+            if (room.players.length === 0) {
+                const index = rooms.indexOf(room);
+                if (index > -1) {
+                    rooms.splice(index, 1);
+                    console.log(`Room ${currentRoom} removed`);
+                }
+            }
+        }
     });
 });
 
 // Sunucuyu başlat
 const PORT = process.env.PORT || 3000;
+const HOST = process.env.HOST || '0.0.0.0';
 
-debug('Starting server with config:', {
-    port: PORT,
-    env: process.env.NODE_ENV,
-    nodeVersion: process.version
-});
-
-httpServer.listen(PORT, () => {
-    debug(`Server is running on port ${PORT}`);
-    debug('Environment:', process.env.NODE_ENV);
-    debug('Process ID:', process.pid);
+http.listen(PORT, HOST, () => {
+    console.log(`Server is running on port ${PORT}`);
 }); 

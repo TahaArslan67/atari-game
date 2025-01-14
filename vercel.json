@@ -2,16 +2,21 @@
     "version": 2,
     "builds": [
         {
-            "src": "index.html",
+            "src": "*.html",
             "use": "@vercel/static"
         },
         {
-            "src": "style.css",
-            "use": "@vercel/static"
-        },
-        {
-            "src": "game.js",
-            "use": "@vercel/static"
+            "src": "*.js",
+            "use": "@vercel/node"
         }
-    ]
+    ],
+    "routes": [
+        {
+            "src": "/(.*)",
+            "dest": "/"
+        }
+    ],
+    "env": {
+        "NODE_ENV": "production"
+    }
 } 

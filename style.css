@@ -6,150 +6,156 @@
 }
 
 body {
-    background: linear-gradient(45deg, #1a1a1a, #2d2d2d);
     min-height: 100vh;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    color: white;
+    background: linear-gradient(135deg, #1a1a1a 0%, #0a0a0a 100%);
     padding: 20px;
 }
 
 .game-container {
-    background: rgba(0, 0, 0, 0.3);
-    border-radius: 15px;
-    padding: 20px;
-    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
-    backdrop-filter: blur(10px);
     display: flex;
     flex-direction: column;
     align-items: center;
-    margin: 20px auto;
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    padding: 20px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+.game-title {
+    color: #fff;
+    font-size: 32px;
+    margin-bottom: 20px;
+    text-align: center;
+    background: linear-gradient(45deg, #4a90e2, #357abd);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 canvas {
-    border: 2px solid rgba(255, 255, 255, 0.2);
+    background: #000;
     border-radius: 10px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
     margin-bottom: 20px;
 }
 
 .button-container {
     display: flex;
-    gap: 15px;
-    flex-wrap: wrap;
-    justify-content: center;
-    margin-top: 20px;
+    gap: 10px;
+    margin-bottom: 20px;
 }
 
 button {
+    padding: 10px 20px;
+    font-size: 16px;
+    border: none;
+    border-radius: 8px;
     background: linear-gradient(45deg, #4a90e2, #357abd);
     color: white;
-    border: none;
-    padding: 12px 24px;
-    border-radius: 25px;
     cursor: pointer;
-    font-size: 16px;
     transition: transform 0.2s, box-shadow 0.2s;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
 }
 
 button:hover {
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 4px 12px rgba(74, 144, 226, 0.3);
 }
 
 button:active {
     transform: translateY(0);
+    box-shadow: 0 2px 8px rgba(74, 144, 226, 0.2);
 }
 
-.room-link {
+.mobile-controls {
+    display: none;
+    gap: 20px;
+}
+
+.control-button {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     background: rgba(255, 255, 255, 0.1);
-    padding: 15px;
-    border-radius: 10px;
-    margin: 15px 0;
-    word-break: break-all;
-    max-width: 100%;
-    text-align: center;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    cursor: pointer;
+    transition: background 0.2s;
 }
 
-.score-display {
-    font-size: 24px;
-    margin-bottom: 15px;
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+.control-button:hover {
+    background: rgba(255, 255, 255, 0.2);
 }
 
-.game-title {
-    font-size: 36px;
-    margin-bottom: 30px;
-    text-align: center;
-    background: linear-gradient(45deg, #4a90e2, #357abd);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+.control-button svg {
+    width: 24px;
+    height: 24px;
+    fill: white;
 }
 
-/* Responsive Tasarım */
 @media (max-width: 850px) {
-    canvas {
+    body {
+        padding: 10px;
+    }
+
+    .game-container {
         width: 100%;
-        height: auto;
+        max-width: 600px;
+        padding: 15px;
     }
-    
+
+    canvas {
+        max-width: 450px;
+    }
+
     .game-title {
-        font-size: 28px;
-    }
-    
-    button {
-        padding: 10px 20px;
-        font-size: 14px;
+        margin: 15px 0;
     }
 }
 
 @media (max-width: 480px) {
+    body {
+        padding: 5px;
+        justify-content: center;
+    }
+
+    .game-container {
+        max-width: 100%;
+        margin: 0;
+        background: rgba(255, 255, 255, 0.03);
+    }
+
+    canvas {
+        max-width: 300px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
     .game-title {
         font-size: 24px;
     }
-    
+
     .button-container {
-        flex-direction: column;
         width: 100%;
+        max-width: 300px;
     }
-    
-    button {
-        width: 100%;
-    }
-    
-    .score-display {
-        font-size: 20px;
-    }
-}
 
-/* Tablet için özel ayarlar */
-@media (min-width: 768px) and (max-width: 1024px) {
-    .game-container {
-        padding: 15px;
+    .mobile-controls {
+        display: flex;
+        position: fixed;
+        bottom: 20px;
+        gap: 40px;
     }
-    
-    canvas {
-        width: 90%;
-        height: auto;
-    }
-}
 
-/* Animasyonlar */
-@keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
-}
-
-.fade-in {
-    animation: fadeIn 0.5s ease-in;
-}
-
-/* Karanlık mod */
-@media (prefers-color-scheme: dark) {
-    body {
-        background: linear-gradient(45deg, #121212, #1a1a1a);
+    .control-button {
+        width: 50px;
+        height: 50px;
+        background: rgba(74, 144, 226, 0.2);
     }
 } 

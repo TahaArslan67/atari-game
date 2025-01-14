@@ -1,3 +1,18 @@
+// Sunucu URL'si
+const serverUrl = process.env.NODE_ENV === 'production' 
+    ? 'https://atari-game-server.vercel.app'  // Production URL'i
+    : 'http://localhost:3000';                // Development URL'i
+
+// Oyun değişkenleri
+let socket = null;
+let playerId = null;
+let isMultiplayer = false;
+let isSoundEnabled = true;
+let isWaiting = true;
+let player1Score = 0;
+let player2Score = 0;
+
+// Canvas ayarları
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
@@ -5,549 +20,361 @@ const ctx = canvas.getContext('2d');
 canvas.width = 800;
 canvas.height = 600;
 
-// Oyun nesneleri
+// Paddle özellikleri
 const paddle = {
     width: 100,
     height: 10,
-    x: 350,
-    y: 550,
+    x: canvas.width / 2 - 50,
+    y: canvas.height - 20,
     speed: 8,
-    dx: 0,
-    color: '#fff'
+    dx: 0
 };
 
-const ball = {
-    x: 400,
-    y: 300,
-    size: 10,
-    speed: 4,
-    dx: 0,
-    dy: 0,
-    isWaiting: false,
-    lastWinner: null
-};
-
-let score = 0;
-
-// Çoklu oyuncu değişkenleri
-let ws = null;
-let playerId = null;
+// Rakip paddle özellikleri
 const opponentPaddle = {
     width: 100,
     height: 10,
-    x: 350,
-    y: 50,
+    x: canvas.width / 2 - 50,
+    y: 10,
     speed: 8,
-    dx: 0,
-    color: '#ff0000'
+    dx: 0
 };
-let isMultiplayer = false;
-let waitingForOpponent = false;
+
+// Top özellikleri
+const ball = {
+    x: canvas.width / 2,
+    y: canvas.height / 2,
+    radius: 8,
+    speed: 2,
+    dx: 2,
+    dy: -2
+};
+
+// Top hareketi
+function moveBall() {
+    if (isWaiting) return;
+    
+    ball.x += ball.dx * ball.speed;
+    ball.y += ball.dy * ball.speed;
+}
 
 // Ses efektleri
 const startSound = new Audio('https://raw.githubusercontent.com/TahaArslan67/atari-game/master/sounds/baslangicsesi.WAV');
 const hittingSound = new Audio('https://raw.githubusercontent.com/TahaArslan67/atari-game/master/sounds/hittingsound.WAV');
 const scoreSound = new Audio('https://raw.githubusercontent.com/TahaArslan67/atari-game/master/sounds/hittingsound.WAV');
 
-let isSoundEnabled = true;
-let player1Score = 0;
-let player2Score = 0;
-
-// Top hızlanma oranı
-const BALL_SPEED_INCREASE = 1.05; // %5 artış
-const MAX_BALL_SPEED = 15;
-
-// Tuş kontrollerini dinle
-document.addEventListener('keydown', keyDown);
-document.addEventListener('keyup', keyUp);
-
-function keyDown(e) {
-    if (e.key === 'ArrowRight' || e.key === 'Right') {
-        paddle.dx = paddle.speed;
-    } else if (e.key === 'ArrowLeft' || e.key === 'Left') {
-        paddle.dx = -paddle.speed;
-    }
-}
-
-function keyUp(e) {
-    if (
-        e.key === 'ArrowRight' ||
-        e.key === 'Right' ||
-        e.key === 'ArrowLeft' ||
-        e.key === 'Left'
-    ) {
-        paddle.dx = 0;
-    }
-}
-
-// Paddle'ı hareket ettir
-function movePaddle() {
-    paddle.x += paddle.dx;
-
-    // Duvar kontrolü
-    if (paddle.x < 0) {
-        paddle.x = 0;
-    } else if (paddle.x + paddle.width > canvas.width) {
-        paddle.x = canvas.width - paddle.width;
-    }
-}
-
-// Topu hareket ettir
-function moveBall() {
-    if (ball.isWaiting) return;
-
-    const nextX = ball.x + ball.dx;
-    const nextY = ball.y + ball.dy;
-
-    // Duvar çarpışma kontrolü
-    if (nextX + ball.size > canvas.width || nextX - ball.size < 0) {
-        ball.dx *= -1;
-        playSound(hittingSound);
-       
-    } else {
-        ball.x = nextX;
-    }
-
-    // Üst duvar kontrolü
-    if (nextY - ball.size < 0) {
-        if (!isMultiplayer) {
-            ball.dy *= -1;
-            playSound(hittingSound);
-            
-        } else {
-            // Üst sınıra çarpma (Player 2 kaybetti)
-            updateScore(1);
-            resetGame();
-            return;
-        }
-    }
-
-    // Alt duvar kontrolü
-    if (nextY + ball.size > canvas.height) {
-        if (!isMultiplayer) {
-            resetGame();
-        } else {
-            // Alt sınıra çarpma (Player 1 kaybetti)
-            updateScore(2);
-            resetGame();
-            return;
-        }
-    }
-
-    // Paddle çarpışma kontrolü (hem üst hem alt paddle için)
-    const currentPaddle = nextY > canvas.height / 2 ? paddle : opponentPaddle;
-    
-    // Çarpışma toleransını artır
-    const paddleCollisionTolerance = 5;
-    if (nextY + ball.size + paddleCollisionTolerance > currentPaddle.y &&
-        nextY - ball.size - paddleCollisionTolerance < currentPaddle.y + currentPaddle.height &&
-        nextX + ball.size > currentPaddle.x &&
-        nextX - ball.size < currentPaddle.x + currentPaddle.width) {
-        
-        playSound(hittingSound);
-
-        // Top yönünü değiştir
-        ball.dy = currentPaddle === paddle ? -ball.speed : ball.speed;
-        
-        // Topun paddle'ın neresine çarptığına göre açıyı değiştir
-        const hitPosition = (nextX - (currentPaddle.x + currentPaddle.width / 2)) / (currentPaddle.width / 2);
-        ball.dx = hitPosition * ball.speed;
-
-        if (isMultiplayer) {
-            // Çok oyunculu modda topu hızlandır
-            const newSpeed = ball.speed * BALL_SPEED_INCREASE;
-            if (newSpeed <= MAX_BALL_SPEED) {
-                ball.speed = newSpeed;
-                // Yeni hıza göre dx ve dy'yi güncelle
-                const currentAngle = Math.atan2(ball.dy, ball.dx);
-                ball.dx = Math.cos(currentAngle) * ball.speed;
-                ball.dy = Math.sin(currentAngle) * ball.speed;
-            }
-        }
-    }
-
-    // Top pozisyonunu güncelle
-    if (!ball.dx && !ball.dy) {
-        ball.dx = ball.speed;
-        ball.dy = playerId === 1 ? -ball.speed : ball.speed;
-    }
-    
-    ball.y = nextY;
-}
-
-// Oyunu sıfırla
-function resetGame() {
-    ball.x = canvas.width / 2;
-    ball.y = canvas.height / 2;
-    ball.speed = 4;
-    ball.dx = 0;
-    ball.dy = 0;
-    ball.isWaiting = true;
-    
-    if (isMultiplayer) {
-        setTimeout(() => {
-            ball.isWaiting = false;
-            // Top yönünü son kazanana göre belirle
-            if (ball.lastWinner) {
-                ball.dy = ball.lastWinner === 1 ? ball.speed : -ball.speed;
-            } else {
-                // İlk başlangıçta rastgele yön
-                ball.dy = Math.random() < 0.5 ? ball.speed : -ball.speed;
-            }
-            // Her durumda rastgele x yönü
-            ball.dx = (Math.random() * 2 - 1) * ball.speed;
-        }, 1000);
-    } else {
-        ball.dx = (Math.random() * 2 - 1) * ball.speed;
-        ball.dy = -ball.speed;
-        score = 0;
-    }
-}
-
-// Çizim fonksiyonları
-function drawBall() {
-    ctx.beginPath();
-    ctx.arc(ball.x, ball.y, ball.size, 0, Math.PI * 2);
-    ctx.fillStyle = playerId === 2 ? '#ff0000' : '#fff';
-    ctx.fill();
-    ctx.closePath();
-}
-
-function drawPaddle() {
-    ctx.beginPath();
-    ctx.rect(paddle.x, paddle.y, paddle.width, paddle.height);
-    ctx.fillStyle = paddle.color;
-    ctx.fill();
-    ctx.closePath();
-}
-
-function drawOpponentPaddle() {
-    if (isMultiplayer) {
-        ctx.beginPath();
-        ctx.rect(opponentPaddle.x, opponentPaddle.y, opponentPaddle.width, opponentPaddle.height);
-        ctx.fillStyle = opponentPaddle.color;
-        ctx.fill();
-        ctx.closePath();
-    }
-}
-
-// Skor tablosunu güncelle
-function updateScore(winner) {
-    if (winner === 1) {
-        player1Score++;
-        ball.lastWinner = 1;
-    } else if (winner === 2) {
-        player2Score++;
-        ball.lastWinner = 2;
-    }
-    
-    // Skor güncellemesini tüm oyunculara gönder
-    if (ws && ws.connected) {
-        console.log('Skor güncellemesi gönderiliyor:', { player1Score, player2Score }); // Debug log
-        ws.emit('update_score', {
-            player1Score: player1Score,
-            player2Score: player2Score,
-            lastWinner: ball.lastWinner,
-            timestamp: Date.now()
-        });
-    }
-    
-    playSound(scoreSound);
-}
-
-// WebSocket bağlantısını başlat
-function startMultiplayer() {
-    if (ws) {
-        ws.disconnect();
-    }
-
-    // Başlangıç sesi çal
-    playSound(startSound);
-
-    // Skorları sıfırla
-    player1Score = 0;
-    player2Score = 0;
-
-    // Socket.IO bağlantısını kur
-    const serverUrl = 'https://pleasing-radiance-production.up.railway.app';
-    ws = io(serverUrl, {
-        transports: ['websocket'],
-        upgrade: false,
-        reconnection: true,
-        reconnectionDelay: 1000,
-        reconnectionDelayMax: 5000,
-        timeout: 20000
-    });
-
-    waitingForOpponent = true;
-
-    ws.on('connect', () => {
-        console.log('Sunucuya bağlandı');
-        const urlParams = new URLSearchParams(window.location.search);
-        let roomId = urlParams.get('room');
-        
-        if (!roomId) {
-            roomId = Math.random().toString(36).substring(7);
-            window.history.pushState({}, '', `?room=${roomId}`);
-        }
-
-        ws.emit('join', {
-            roomId: roomId
-        });
-    });
-
-    ws.on('connect_error', (error) => {
-        console.error('Bağlantı hatası:', error);
-        alert('Sunucuya bağlanılamadı!');
-    });
-
-    ws.on('init', (data) => {
-        playerId = data.playerId;
-        console.log('Player ID:', playerId); // Debug log
-        
-        // Mevcut skorları sıfırla
-        player1Score = 0;
-        player2Score = 0;
-        
-        if (playerId === 2) {
-            paddle.y = 50;
-            paddle.color = '#ff0000';
-            opponentPaddle.y = 550;
-            opponentPaddle.color = '#fff';
-            ball.y = canvas.height / 2;
-            ball.x = canvas.width / 2;
-        } else {
-            paddle.y = 550;
-            paddle.color = '#fff';
-            opponentPaddle.y = 50;
-            opponentPaddle.color = '#ff0000';
-            ball.y = canvas.height / 2;
-            ball.x = canvas.width / 2;
-        }
-    });
-
-    ws.on('start', () => {
-        waitingForOpponent = false;
-        isMultiplayer = true;
-        resetGame();
-    });
-
-    ws.on('opponent_update', (data) => {
-        opponentPaddle.x = data.position;
-    });
-
-    ws.on('ball_sync', (data) => {
-        // Her iki oyuncu için de top verilerini senkronize et
-        if (playerId === 2) {
-            ball.x = data.ball.x;
-            ball.y = data.ball.y;
-            ball.dx = data.ball.dx;
-            ball.dy = data.ball.dy;
-            ball.speed = data.ball.speed;
-            ball.isWaiting = data.ball.isWaiting;
-        }
-    });
-
-    ws.on('opponent_left', () => {
-        alert('Rakip oyundan ayrıldı!');
-        isMultiplayer = false;
-        waitingForOpponent = false;
-        resetGame();
-    });
-
-    ws.on('disconnect', () => {
-        isMultiplayer = false;
-        waitingForOpponent = false;
-        alert('Sunucu bağlantısı kesildi!');
-    });
-
-    // Skor güncelleme olayını dinle
-    ws.on('update_score', (data) => {
-        console.log('Skor güncelleme alındı:', data); // Debug log
-        if (data && typeof data.player1Score === 'number' && typeof data.player2Score === 'number') {
-            player1Score = data.player1Score;
-            player2Score = data.player2Score;
-            ball.lastWinner = data.lastWinner;
-            
-            // Skor değiştiğinde konsola yazdır
-            console.log('Güncel skorlar:', { player1Score, player2Score, playerId });
-        }
-    });
-}
-
-// Paddle pozisyonunu daha sık gönder
-function sendPaddlePosition() {
-    if (ws && ws.connected) {
-        ws.emit('paddle_update', {
-            position: paddle.x,
-            timestamp: Date.now()
-        });
-    }
-}
-
-// Top pozisyonunu daha sık gönder
-function sendBallPosition() {
-    if (ws && ws.connected && playerId === 1) {
-        ws.emit('ball_update', {
-            ball: {
-                x: ball.x,
-                y: ball.y,
-                dx: ball.dx,
-                dy: ball.dy,
-                speed: ball.speed,
-                isWaiting: ball.isWaiting,
-                timestamp: Date.now()
-            }
-        });
-    }
-}
-
-let winnerMessage = '';
-let showWinnerMessage = false;
-let messageTimer = null;
-
-function showWinner(message) {
-    winnerMessage = message;
-    showWinnerMessage = true;
-    
-    // Önceki zamanlayıcıyı temizle
-    if (messageTimer) {
-        clearTimeout(messageTimer);
-    }
-    
-    // 3 saniye sonra mesajı kaldır
-    messageTimer = setTimeout(() => {
-        showWinnerMessage = false;
-        winnerMessage = '';
-    }, 3000);
-}
-
-// Zaman takibi için değişken
-let lastUpdateTime = Date.now();
-
-// Oyun döngüsü
-function update() {
-    const currentTime = Date.now();
-    const deltaTime = currentTime - lastUpdateTime;
-
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    if (waitingForOpponent && isMultiplayer) {
-        ctx.fillStyle = '#fff';
-        ctx.font = '24px Arial';
-        ctx.textAlign = 'center';
-        ctx.fillText('Rakip bekleniyor...', canvas.width / 2, canvas.height / 2);
-        ctx.fillText('Oda bağlantı linki:', canvas.width / 2, canvas.height / 2 + 40);
-        ctx.fillText(window.location.href, canvas.width / 2, canvas.height / 2 + 80);
-        requestAnimationFrame(update);
-        return;
-    }
-
-    // Skor tablosunu göster
-    if (!isMultiplayer) {
-        ctx.fillStyle = '#fff';
-        ctx.font = '24px Arial';
-        ctx.textAlign = 'left';
-        ctx.fillText(`Skor: ${score}`, 10, 30);
-    } else {
-        ctx.fillStyle = '#fff';
-        ctx.font = '24px Arial';
-        ctx.textAlign = 'center';
-        
-        // Debug için skor ve oyuncu bilgilerini yazdır
-        console.log('Çizim öncesi skorlar:', { player1Score, player2Score, playerId });
-        
-        // Player 2 için skorları ters çevir
-        if (playerId === 2) {
-            ctx.fillText(`Siz: ${player2Score}`, canvas.width / 4, 30);
-            ctx.fillText(`Rakip: ${player1Score}`, canvas.width * 3 / 4, 30);
-        } else {
-            ctx.fillText(`Siz: ${player1Score}`, canvas.width / 4, 30);
-            ctx.fillText(`Rakip: ${player2Score}`, canvas.width * 3 / 4, 30);
-        }
-        
-        ctx.font = '16px Arial';
-        ctx.textAlign = 'left';
-        ctx.fillText(`Top Hızı: ${Math.round(ball.speed * 10) / 10}`, 10, 60);
-    }
-
-    // Her zaman topu çiz
-    drawBall();
-    drawPaddle();
-    drawOpponentPaddle();
-
-    movePaddle();
-    
-    // Çok oyunculu modda sadece Player 1 topu hareket ettirir
-    if (!isMultiplayer || (isMultiplayer && playerId === 1)) {
-        moveBall();
-    }
-
-    // Top pozisyonunu daha sık gönder
-    if (isMultiplayer && playerId === 1) {
-        sendBallPosition();
-    }
-
-    if (isMultiplayer && deltaTime >= 16) { // ~60fps
-        sendPaddlePosition();
-        lastUpdateTime = currentTime;
-    }
-
-    requestAnimationFrame(update);
-}
-
-// Butonları HTML'den al
-const multiplayerBtn = document.getElementById('multiplayerBtn');
-const soundBtn = document.getElementById('soundBtn');
-
-// Buton olaylarını ekle
-multiplayerBtn.onclick = () => {
-    playSound(startSound);
-    startMultiplayer();
-};
-
-soundBtn.onclick = () => {
-    isSoundEnabled = !isSoundEnabled;
-    soundBtn.textContent = `Ses: ${isSoundEnabled ? 'Açık' : 'Kapalı'}`;
-};
-
-// Canvas boyutlarını responsive yap
-function resizeCanvas() {
-    const container = document.querySelector('.game-container');
-    const containerWidth = container.clientWidth;
-    const maxWidth = 800;
-    const aspectRatio = 600 / 800;
-
-    if (containerWidth < maxWidth) {
-        canvas.width = containerWidth - 40; // padding için
-        canvas.height = canvas.width * aspectRatio;
-    } else {
-        canvas.width = maxWidth;
-        canvas.height = maxWidth * aspectRatio;
-    }
-}
-
-// Pencere boyutu değiştiğinde canvas'ı yeniden boyutlandır
-window.addEventListener('resize', resizeCanvas);
-resizeCanvas();
-
-// Oyun başlangıç sesi - kullanıcı etkileşimi sonrası çal
-document.addEventListener('click', () => {
-    if (!startSound.played.length) {
-        playSound(startSound);
-    }
-}, { once: true });
-
 // Ses çalma fonksiyonu
 function playSound(sound) {
     if (isSoundEnabled && sound) {
-        // Sesi baştan başlat
         sound.currentTime = 0;
-        // Sesi çal
         sound.play().catch(error => {
             console.log('Ses çalma hatası:', error);
         });
     }
 }
 
+// Tuş kontrollerini dinle
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowLeft') {
+        paddle.x -= paddle.speed;
+        if (paddle.x < 0) paddle.x = 0;
+    }
+    if (e.key === 'ArrowRight') {
+        paddle.x += paddle.speed;
+        if (paddle.x + paddle.width > canvas.width) {
+            paddle.x = canvas.width - paddle.width;
+        }
+    }
+});
+
+// Mobil kontroller
+document.getElementById('leftBtn').addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    paddle.x -= paddle.speed;
+    if (paddle.x < 0) paddle.x = 0;
+});
+
+document.getElementById('rightBtn').addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    paddle.x += paddle.speed;
+    if (paddle.x + paddle.width > canvas.width) {
+        paddle.x = canvas.width - paddle.width;
+    }
+});
+
+// Çizim fonksiyonları
+function draw() {
+    // Canvas'ı temizle
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    // Paddle'ları çiz
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(paddle.x, paddle.y, paddle.width, paddle.height);
+    ctx.fillRect(opponentPaddle.x, opponentPaddle.y, opponentPaddle.width, opponentPaddle.height);
+    
+    // Topu çiz
+    ctx.beginPath();
+    ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
+    ctx.fillStyle = '#fff';
+    ctx.fill();
+    ctx.closePath();
+    
+    // Skoru çiz
+    ctx.font = '24px Arial';
+    ctx.fillStyle = '#fff';
+    ctx.fillText(`${player2Score}`, 20, canvas.height / 2 - 20);
+    ctx.fillText(`${player1Score}`, 20, canvas.height / 2 + 40);
+}
+
+// Çarpışma kontrolü
+function checkCollision() {
+    // Duvarlarla çarpışma
+    if (ball.x - ball.radius < 0 || ball.x + ball.radius > canvas.width) {
+        ball.dx *= -1;
+        playSound(hittingSound);
+    }
+    
+    // Üst ve alt çarpışma (skor)
+    if (ball.y + ball.radius > canvas.height) {
+        // Üst oyuncu kazandı
+        if (isMultiplayer && socket && socket.connected) {
+            if (playerId === 1) {
+                socket.emit('score_update', {
+                    winner: 2,
+                    timestamp: Date.now()
+                });
+            }
+        } else {
+            player2Score++;
+        }
+        resetBall();
+        playSound(scoreSound);
+    } else if (ball.y - ball.radius < 0) {
+        // Alt oyuncu kazandı
+        if (isMultiplayer && socket && socket.connected) {
+            if (playerId === 1) {
+                socket.emit('score_update', {
+                    winner: 1,
+                    timestamp: Date.now()
+                });
+            }
+        } else {
+            player1Score++;
+        }
+        resetBall();
+        playSound(scoreSound);
+    }
+    
+    // Paddle çarpışmaları - Player 1
+    if (playerId === 1) {
+        if (ball.dy > 0) {
+            // Alt paddle ile çarpışma (Player 1'in paddle'ı)
+            if (ball.y + ball.radius > paddle.y && 
+                ball.x > paddle.x && 
+                ball.x < paddle.x + paddle.width) {
+                ball.dy *= -1;
+                ball.speed *= 1.02;
+                playSound(hittingSound);
+            }
+        } else {
+            // Üst paddle ile çarpışma (Rakibin paddle'ı)
+            if (ball.y - ball.radius < opponentPaddle.y + opponentPaddle.height && 
+                ball.x > opponentPaddle.x && 
+                ball.x < opponentPaddle.x + opponentPaddle.width) {
+                ball.dy *= -1;
+                ball.speed *= 1.02;
+                playSound(hittingSound);
+            }
+        }
+    } else {
+        // Paddle çarpışmaları - Player 2
+        if (ball.dy < 0) {
+            // Üst paddle ile çarpışma (Player 2'nin paddle'ı)
+            if (ball.y - ball.radius < paddle.y + paddle.height && 
+                ball.x > paddle.x && 
+                ball.x < paddle.x + paddle.width) {
+                ball.dy *= -1;
+                ball.speed *= 1.02;
+                playSound(hittingSound);
+            }
+        } else {
+            // Alt paddle ile çarpışma (Rakibin paddle'ı)
+            if (ball.y + ball.radius > opponentPaddle.y && 
+                ball.x > opponentPaddle.x && 
+                ball.x < opponentPaddle.x + opponentPaddle.width) {
+                ball.dy *= -1;
+                ball.speed *= 1.02;
+                playSound(hittingSound);
+            }
+        }
+    }
+}
+
+// Topu resetle
+function resetBall() {
+    ball.x = canvas.width / 2;
+    ball.y = canvas.height / 2;
+    ball.speed = 2;
+    ball.dx = Math.random() > 0.5 ? 2 : -2;
+    ball.dy = Math.random() > 0.5 ? 2 : -2;
+}
+
+// Oyun döngüsü
+function update() {
+    // Canvas'ı temizle
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    // Çok oyunculu modda
+    if (isMultiplayer) {
+        // Player 1 topu kontrol eder
+        if (playerId === 1) {
+            moveBall();
+            checkCollision();
+            
+            // Top pozisyonunu gönder
+            if (socket && socket.connected) {
+                socket.emit('ball_update', {
+                    x: ball.x,
+                    y: ball.y,
+                    dx: ball.dx,
+                    dy: ball.dy,
+                    speed: ball.speed,
+                    timestamp: Date.now()
+                });
+            }
+        }
+        
+        // Paddle pozisyonunu gönder
+        if (socket && socket.connected) {
+            socket.emit('paddle_update', {
+                position: paddle.x,
+                timestamp: Date.now()
+            });
+        }
+    } else {
+        // Tek oyunculu mod
+        moveBall();
+        checkCollision();
+        
+        // AI kontrolü
+        opponentPaddle.x = ball.x - opponentPaddle.width / 2;
+        if (opponentPaddle.x < 0) opponentPaddle.x = 0;
+        if (opponentPaddle.x + opponentPaddle.width > canvas.width) {
+            opponentPaddle.x = canvas.width - opponentPaddle.width;
+        }
+    }
+    
+    // Oyun elemanlarını çiz
+    draw();
+    
+    // Bir sonraki kareyi çiz
+    requestAnimationFrame(update);
+}
+
+// Buton olayları
+const multiplayerBtn = document.getElementById('multiplayerBtn');
+const soundBtn = document.getElementById('soundBtn');
+
+multiplayerBtn.onclick = () => {
+    isMultiplayer = true;
+    playSound(startSound);
+    
+    // Butonları gizle
+    document.querySelector('.button-container').style.display = 'none';
+    
+    // Mobil kontrolleri göster
+    document.querySelector('.mobile-controls').style.display = 'flex';
+    
+    // Socket.IO bağlantısı
+    socket = io(serverUrl, {
+        transports: ['polling', 'websocket'],
+        upgrade: true,
+        reconnection: true,
+        reconnectionDelay: 1000,
+        reconnectionAttempts: 5
+    });
+
+    // Bağlantı başarılı
+    socket.on('connect', () => {
+        socket.emit('check_rooms');
+    });
+
+    // Mevcut odaları kontrol et
+    socket.on('rooms_status', (data) => {
+        if (data.availableRoom) {
+            socket.emit('join', { roomId: data.roomId });
+        } else {
+            const newRoomId = Math.random().toString(36).substring(7);
+            socket.emit('join', { roomId: newRoomId });
+        }
+    });
+
+    // Oyuncu numarası al
+    socket.on('init', (data) => {
+        playerId = data.playerId;
+        
+        // Player 2 için paddle pozisyonlarını ayarla
+        if (playerId === 2) {
+            // Player 2 için paddle'ı üste al
+            paddle.y = 10;
+            opponentPaddle.y = canvas.height - 20;
+        } else {
+            // Player 1 için paddle'ı alta al
+            paddle.y = canvas.height - 20;
+            opponentPaddle.y = 10;
+        }
+        
+        // Başlangıç pozisyonlarını ayarla
+        resetBall();
+    });
+
+    // Oyun başladı
+    socket.on('start', () => {
+        isWaiting = false;
+        resetBall();
+    });
+
+    // Top güncelleme
+    socket.on('ball_update', (data) => {
+        if (playerId === 2) {
+            ball.x = data.x;
+            ball.y = data.y;
+            ball.dx = data.dx;
+            ball.dy = data.dy;
+            ball.speed = data.speed;
+        }
+    });
+
+    // Rakip paddle güncelleme
+    socket.on('paddle_update', (data) => {
+        opponentPaddle.x = data.position;
+    });
+
+    // Skor güncelleme
+    socket.on('score_update', (data) => {
+        console.log('Skor güncelleme alındı:', data);
+        
+        if (data.winner === 1) {
+            player1Score++;
+            console.log('Player 1 skor kazandı:', player1Score);
+        } else if (data.winner === 2) {
+            player2Score++;
+            console.log('Player 2 skor kazandı:', player2Score);
+        }
+        
+        // Ses efektini çal
+        playSound(scoreSound);
+        
+        console.log('Güncel skorlar:', { player1Score, player2Score, winner: data.winner });
+    });
+};
+
+// Ses butonu
+soundBtn.onclick = () => {
+    isSoundEnabled = !isSoundEnabled;
+    soundBtn.textContent = `Ses: ${isSoundEnabled ? 'Açık' : 'Kapalı'}`;
+};
+
+// Oyunu başlat
+resetBall();
 update(); 
