@@ -102,9 +102,13 @@ function keyUp(e) {
 
 // Paddle'ı hareket ettir
 function movePaddle() {
+    // Önceki pozisyonu kaydet
+    const previousX = paddle.x;
+    
+    // Yeni pozisyonu hesapla
     paddle.x += paddle.dx;
 
-    // Duvar kontrolü
+    // Duvar kontrolü - ekran boyutuna göre sınırla
     if (paddle.x < 0) {
         paddle.x = 0;
     } else if (paddle.x + paddle.width > canvas.width) {
@@ -449,17 +453,9 @@ function resizeCanvas() {
     const maxWidth = 800;
     const aspectRatio = 600 / 800;
 
-    // Mevcut pozisyonların oranlarını kaydet
-    const paddleRatioX = paddle.x / canvas.width;
-    const paddleRatioY = paddle.y / canvas.height;
-    const opponentRatioX = opponentPaddle.x / canvas.width;
-    const opponentRatioY = opponentPaddle.y / canvas.height;
-    const ballRatioX = ball.x / canvas.width;
-    const ballRatioY = ball.y / canvas.height;
-
     // Canvas boyutlarını güncelle
     if (containerWidth < maxWidth) {
-        canvas.width = containerWidth - 40;
+        canvas.width = containerWidth - 20; // padding'i azalttım
         canvas.height = canvas.width * aspectRatio;
     } else {
         canvas.width = maxWidth;
@@ -475,16 +471,33 @@ function resizeCanvas() {
     opponentPaddle.width = 100 * scale;
     opponentPaddle.height = 10 * scale;
 
+    // Paddle pozisyonlarını ayarla
+    if (playerId === 2) {
+        paddle.y = 50;
+        opponentPaddle.y = canvas.height - opponentPaddle.height - 10;
+    } else {
+        paddle.y = canvas.height - paddle.height - 10;
+        opponentPaddle.y = 50;
+    }
+
+    // Paddle'ın x pozisyonunu ekran içinde tut
+    if (paddle.x + paddle.width > canvas.width) {
+        paddle.x = canvas.width - paddle.width;
+    }
+    if (opponentPaddle.x + opponentPaddle.width > canvas.width) {
+        opponentPaddle.x = canvas.width - opponentPaddle.width;
+    }
+
     // Top boyutunu güncelle
     ball.size = 10 * scale;
 
-    // Pozisyonları yeni boyutlara göre ayarla
-    paddle.x = paddleRatioX * canvas.width;
-    paddle.y = playerId === 2 ? (50 * scale) : (canvas.height - paddle.height - 10);
-    opponentPaddle.x = opponentRatioX * canvas.width;
-    opponentPaddle.y = playerId === 2 ? (canvas.height - paddle.height - 10) : (50 * scale);
-    ball.x = ballRatioX * canvas.width;
-    ball.y = ballRatioY * canvas.height;
+    // Topun pozisyonunu ekran içinde tut
+    if (ball.x + ball.size > canvas.width) {
+        ball.x = canvas.width - ball.size;
+    }
+    if (ball.y + ball.size > canvas.height) {
+        ball.y = canvas.height - ball.size;
+    }
 
     // Font boyutlarını güncelle
     const fontSize = Math.max(16 * scale, 12);

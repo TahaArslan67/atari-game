@@ -131,7 +131,7 @@ button:active {
     
     canvas {
         width: 100%;
-        max-width: 280px;
+        max-width: 250px;
         height: auto;
         margin: 10px 0;
     }
@@ -162,18 +162,18 @@ button:active {
 
     .mobile-controls {
         bottom: 15px;
-        gap: 100px;
+        gap: 120px;
     }
 
     .control-button {
-        width: 40px;
-        height: 40px;
-        background: rgba(74, 144, 226, 0.4);
+        width: 45px;
+        height: 45px;
+        background: rgba(74, 144, 226, 0.5);
     }
     
     .control-button svg {
-        width: 20px;
-        height: 20px;
+        width: 22px;
+        height: 22px;
     }
 }
 
