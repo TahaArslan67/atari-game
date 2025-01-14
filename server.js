@@ -7,23 +7,14 @@ const app = express();
 const httpServer = createServer(app);
 
 // CORS ayarları
-app.use(cors({
-    origin: '*',
-    methods: ['GET', 'POST']
-}));
+app.use(cors());
 
 // Socket.IO kurulumu
-const io = new Server(httpServer, {
-    cors: {
-        origin: '*',
-        methods: ['GET', 'POST']
-    },
-    transports: ['websocket', 'polling']
-});
+const io = new Server(httpServer);
 
 // Basit endpoint'ler
 app.get('/', (req, res) => {
-    res.send('Atari Game Server is running');
+    res.send('OK');
 });
 
 app.get('/health', (req, res) => {
@@ -79,7 +70,9 @@ io.on('connection', (socket) => {
 });
 
 // Sunucuyu başlat
-const port = process.env.PORT || 3000;
-httpServer.listen(port, () => {
-    console.log(`Server is running on port ${port}`);
+const PORT = process.env.PORT || 3000;
+const HOST = '0.0.0.0';
+
+httpServer.listen(PORT, HOST, () => {
+    console.log(`Server is running on http://${HOST}:${PORT}`);
 }); 
