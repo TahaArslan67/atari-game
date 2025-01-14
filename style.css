@@ -92,8 +92,14 @@ button:active {
 
 /* Responsive Tasarım */
 @media (max-width: 850px) {
+    .game-container {
+        width: 95%;
+        padding: 15px;
+    }
+    
     canvas {
         width: 100%;
+        max-width: 600px;
         height: auto;
     }
     
@@ -108,8 +114,22 @@ button:active {
 }
 
 @media (max-width: 480px) {
+    .game-container {
+        width: 95%;
+        padding: 10px;
+        margin: 10px auto;
+    }
+    
+    canvas {
+        width: 100%;
+        max-width: 350px;
+        height: auto;
+        margin-bottom: 10px;
+    }
+    
     .game-title {
         font-size: 24px;
+        margin-bottom: 15px;
     }
     
     .button-container {
@@ -124,17 +144,27 @@ button:active {
     .score-display {
         font-size: 20px;
     }
+
+    .mobile-controls {
+        bottom: 10px;
+    }
 }
 
 /* Tablet için özel ayarlar */
 @media (min-width: 768px) and (max-width: 1024px) {
     .game-container {
+        width: 90%;
         padding: 15px;
     }
     
     canvas {
-        width: 90%;
+        width: 100%;
+        max-width: 700px;
         height: auto;
+    }
+    
+    .mobile-controls {
+        bottom: 30px;
     }
 }
 
