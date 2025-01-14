@@ -6,17 +6,38 @@
             "use": "@vercel/static"
         },
         {
+            "src": "*.css",
+            "use": "@vercel/static"
+        },
+        {
             "src": "*.js",
             "use": "@vercel/node"
+        },
+        {
+            "src": "sounds/*",
+            "use": "@vercel/static"
         }
     ],
     "routes": [
         {
+            "src": "/sounds/(.*)",
+            "dest": "/sounds/$1"
+        },
+        {
+            "src": "/style.css",
+            "dest": "/style.css"
+        },
+        {
+            "src": "/game.js",
+            "dest": "/game.js"
+        },
+        {
+            "src": "/server.js",
+            "dest": "/server.js"
+        },
+        {
             "src": "/(.*)",
-            "dest": "/"
+            "dest": "/index.html"
         }
-    ],
-    "env": {
-        "NODE_ENV": "production"
-    }
+    ]
 } 

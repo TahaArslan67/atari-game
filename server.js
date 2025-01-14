@@ -5,20 +5,26 @@ const io = require('socket.io')(http, {
     cors: {
         origin: "*",
         methods: ["GET", "POST"]
-    },
-    transports: ['polling', 'websocket']
+    }
 });
 const cors = require('cors');
+const path = require('path');
+const serveStatic = require('serve-static');
 
 app.use(cors());
+app.use(serveStatic(path.join(__dirname, 'public')));
 
 // Odaları saklamak için dizi
 const rooms = [];
 
 // Ana endpoint
 app.get('/', (req, res) => {
-    res.send('Atari Game Server');
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
+
+// Statik dosyalar için endpoint
+app.use('/sounds', express.static(path.join(__dirname, 'public/sounds')));
+app.use(express.static(path.join(__dirname, 'public')));
 
 // Socket.IO olayları
 io.on('connection', (socket) => {
