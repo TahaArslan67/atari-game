@@ -2,7 +2,6 @@
   "name": "atari-game",
   "version": "1.0.0",
   "description": "Web tabanlı çok oyunculu Atari oyunu",
-  "type": "module",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
