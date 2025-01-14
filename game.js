@@ -45,9 +45,9 @@ let isMultiplayer = false;
 let waitingForOpponent = false;
 
 // Ses efektleri
-const paddleHitSound = new Audio('https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3');
-const wallHitSound = new Audio('https://assets.mixkit.co/active_storage/sfx/146/146-preview.mp3');
-const scoreSound = new Audio('https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3');
+const startSound = new Audio('sounds/baslangicsesi.wav');
+const hittingSound = new Audio('sounds/hittingSound.wav');
+const scoreSound = new Audio('sounds/hittingSound.wav');
 
 let isSoundEnabled = true;
 let player1Score = 0;
@@ -102,9 +102,7 @@ function moveBall() {
     // Duvar çarpışma kontrolü
     if (nextX + ball.size > canvas.width || nextX - ball.size < 0) {
         ball.dx *= -1;
-        if (isSoundEnabled) {
-            wallHitSound.play();
-        }
+        playSound(hittingSound);
     } else {
         ball.x = nextX;
     }
@@ -113,9 +111,7 @@ function moveBall() {
     if (nextY - ball.size < 0) {
         if (!isMultiplayer) {
             ball.dy *= -1;
-            if (isSoundEnabled) {
-                wallHitSound.play();
-            }
+            playSound(hittingSound);
         } else {
             // Üst sınıra çarpma (Player 2 kaybetti)
             updateScore(1);
@@ -143,9 +139,7 @@ function moveBall() {
         nextX + ball.size > currentPaddle.x &&
         nextX - ball.size < currentPaddle.x + currentPaddle.width) {
         
-        if (isSoundEnabled) {
-            paddleHitSound.play();
-        }
+        playSound(hittingSound);
 
         // Top yönünü değiştir
         ball.dy = currentPaddle === paddle ? -ball.speed : ball.speed;
@@ -242,9 +236,7 @@ function updateScore(winner) {
         ball.lastWinner = 2;
     }
     
-    if (isSoundEnabled) {
-        scoreSound.play();
-    }
+    playSound(scoreSound);
 }
 
 // WebSocket bağlantısını başlat
@@ -252,6 +244,9 @@ function startMultiplayer() {
     if (ws) {
         ws.disconnect();
     }
+
+    // Başlangıç sesi çal
+    playSound(startSound);
 
     // Skorları sıfırla
     player1Score = 0;
@@ -454,5 +449,29 @@ soundBtn.onclick = () => {
     soundBtn.textContent = `Ses: ${isSoundEnabled ? 'Açık' : 'Kapalı'}`;
 };
 gameContainer.appendChild(soundBtn);
+
+// Ses çalma fonksiyonu
+function playSound(sound) {
+    if (isSoundEnabled) {
+        try {
+            // Sesi baştan başlat
+            sound.currentTime = 0;
+            // Sesi çal
+            const playPromise = sound.play();
+            if (playPromise !== undefined) {
+                playPromise.catch(error => {
+                    console.log("Ses çalma hatası:", error);
+                });
+            }
+        } catch (error) {
+            console.log("Ses çalma hatası:", error);
+        }
+    }
+}
+
+// Oyun başlangıç sesi
+window.addEventListener('load', () => {
+    playSound(startSound);
+});
 
 update(); 
