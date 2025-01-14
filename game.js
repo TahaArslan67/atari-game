@@ -442,6 +442,38 @@ function showWinner(message) {
 // Zaman takibi için değişken
 let lastUpdateTime = Date.now();
 
+// Canvas boyutlarını responsive yap
+function resizeCanvas() {
+    const container = document.querySelector('.game-container');
+    const containerWidth = container.clientWidth;
+    const maxWidth = 800;
+    const aspectRatio = 600 / 800;
+
+    if (containerWidth < maxWidth) {
+        canvas.width = containerWidth - 40; // padding için
+        canvas.height = canvas.width * aspectRatio;
+    } else {
+        canvas.width = maxWidth;
+        canvas.height = maxWidth * aspectRatio;
+    }
+
+    // Oyun elemanlarının boyutlarını güncelle
+    const scale = canvas.width / 800; // 800 orijinal genişlik
+
+    // Paddle boyutlarını güncelle
+    paddle.width = 100 * scale;
+    paddle.height = 10 * scale;
+    opponentPaddle.width = 100 * scale;
+    opponentPaddle.height = 10 * scale;
+
+    // Top boyutunu güncelle
+    ball.size = 10 * scale;
+
+    // Font boyutlarını güncelle
+    const fontSize = Math.max(16 * scale, 12); // minimum 12px
+    ctx.font = `${fontSize}px Arial`;
+}
+
 // Oyun döngüsü
 function update() {
     const currentTime = Date.now();
@@ -451,11 +483,12 @@ function update() {
 
     if (waitingForOpponent && isMultiplayer) {
         ctx.fillStyle = '#fff';
-        ctx.font = '24px Arial';
+        const fontSize = Math.max(24 * (canvas.width / 800), 14);
+        ctx.font = `${fontSize}px Arial`;
         ctx.textAlign = 'center';
         ctx.fillText('Rakip bekleniyor...', canvas.width / 2, canvas.height / 2);
-        ctx.fillText('Oda bağlantı linki:', canvas.width / 2, canvas.height / 2 + 40);
-        ctx.fillText(window.location.href, canvas.width / 2, canvas.height / 2 + 80);
+        ctx.fillText('Oda bağlantı linki:', canvas.width / 2, canvas.height / 2 + 40 * (canvas.width / 800));
+        ctx.fillText(window.location.href, canvas.width / 2, canvas.height / 2 + 80 * (canvas.width / 800));
         requestAnimationFrame(update);
         return;
     }
@@ -463,26 +496,28 @@ function update() {
     // Skor tablosunu göster
     if (!isMultiplayer) {
         ctx.fillStyle = '#fff';
-        ctx.font = '24px Arial';
+        const fontSize = Math.max(24 * (canvas.width / 800), 14);
+        ctx.font = `${fontSize}px Arial`;
         ctx.textAlign = 'left';
-        ctx.fillText(`Skor: ${score}`, 10, 30);
+        ctx.fillText(`Skor: ${score}`, 10 * (canvas.width / 800), 30 * (canvas.width / 800));
     } else {
         ctx.fillStyle = '#fff';
-        ctx.font = '24px Arial';
+        const fontSize = Math.max(24 * (canvas.width / 800), 14);
+        ctx.font = `${fontSize}px Arial`;
         ctx.textAlign = 'center';
         
-        // Skorları göster
         if (playerId === 2) {
-            ctx.fillText(`Siz (Kırmızı): ${player2Score}`, canvas.width / 4, 30);
-            ctx.fillText(`Rakip (Beyaz): ${player1Score}`, canvas.width * 3 / 4, 30);
+            ctx.fillText(`Siz (Kırmızı): ${player2Score}`, canvas.width / 4, 30 * (canvas.width / 800));
+            ctx.fillText(`Rakip (Beyaz): ${player1Score}`, canvas.width * 3 / 4, 30 * (canvas.width / 800));
         } else {
-            ctx.fillText(`Siz (Beyaz): ${player1Score}`, canvas.width / 4, 30);
-            ctx.fillText(`Rakip (Kırmızı): ${player2Score}`, canvas.width * 3 / 4, 30);
+            ctx.fillText(`Siz (Beyaz): ${player1Score}`, canvas.width / 4, 30 * (canvas.width / 800));
+            ctx.fillText(`Rakip (Kırmızı): ${player2Score}`, canvas.width * 3 / 4, 30 * (canvas.width / 800));
         }
         
-        ctx.font = '16px Arial';
+        const smallFontSize = Math.max(16 * (canvas.width / 800), 12);
+        ctx.font = `${smallFontSize}px Arial`;
         ctx.textAlign = 'left';
-        ctx.fillText(`Top Hızı: ${Math.round(ball.speed * 10) / 10}`, 10, 60);
+        ctx.fillText(`Top Hızı: ${Math.round(ball.speed * 10) / 10}`, 10 * (canvas.width / 800), 60 * (canvas.width / 800));
     }
 
     // Her zaman topu çiz
@@ -536,24 +571,12 @@ soundBtn.onclick = () => {
     soundBtn.textContent = `Ses: ${isSoundEnabled ? 'Açık' : 'Kapalı'}`;
 };
 
-// Canvas boyutlarını responsive yap
-function resizeCanvas() {
-    const container = document.querySelector('.game-container');
-    const containerWidth = container.clientWidth;
-    const maxWidth = 800;
-    const aspectRatio = 600 / 800;
-
-    if (containerWidth < maxWidth) {
-        canvas.width = containerWidth - 40; // padding için
-        canvas.height = canvas.width * aspectRatio;
-    } else {
-        canvas.width = maxWidth;
-        canvas.height = maxWidth * aspectRatio;
-    }
-}
-
 // Pencere boyutu değiştiğinde canvas'ı yeniden boyutlandır
-window.addEventListener('resize', resizeCanvas);
+window.addEventListener('resize', () => {
+    resizeCanvas();
+});
+
+// İlk yükleme için canvas'ı boyutlandır
 resizeCanvas();
 
 // Oyun başlangıç sesi - kullanıcı etkileşimi sonrası çal
