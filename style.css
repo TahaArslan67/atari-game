@@ -99,7 +99,7 @@ button:active {
     
     canvas {
         width: 100%;
-        max-width: 600px;
+        max-width: 500px;
         height: auto;
     }
     
@@ -117,6 +117,7 @@ button:active {
     body {
         padding: 0;
         justify-content: flex-start;
+        min-height: 100dvh;
     }
 
     .game-container {
@@ -127,11 +128,13 @@ button:active {
         background: none;
         box-shadow: none;
         backdrop-filter: none;
+        min-height: 100dvh;
+        justify-content: center;
     }
     
     canvas {
         width: 100%;
-        max-width: 250px;
+        max-width: 200px;
         height: auto;
         margin: 10px 0;
     }
@@ -143,7 +146,7 @@ button:active {
     
     .button-container {
         flex-direction: column;
-        width: 90%;
+        width: 80%;
         gap: 8px;
         margin-top: 5px;
     }
@@ -161,24 +164,20 @@ button:active {
     }
 
     .mobile-controls {
-        bottom: 15px;
-        gap: 120px;
+        position: fixed;
+        bottom: 20px;
+        gap: 150px;
     }
 
     .control-button {
         width: 45px;
         height: 45px;
-        background: rgba(74, 144, 226, 0.5);
-    }
-    
-    .control-button svg {
-        width: 22px;
-        height: 22px;
+        background: rgba(74, 144, 226, 0.6);
     }
 }
 
 /* Tablet için özel ayarlar */
-@media (min-width: 768px) and (max-width: 1024px) {
+@media (min-width: 481px) and (max-width: 1024px) {
     .game-container {
         width: 90%;
         padding: 15px;
@@ -186,12 +185,13 @@ button:active {
     
     canvas {
         width: 100%;
-        max-width: 700px;
+        max-width: 400px;
         height: auto;
     }
     
     .mobile-controls {
-        bottom: 30px;
+        bottom: 40px;
+        gap: 200px;
     }
 }
 

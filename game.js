@@ -102,10 +102,6 @@ function keyUp(e) {
 
 // Paddle'ı hareket ettir
 function movePaddle() {
-    // Önceki pozisyonu kaydet
-    const previousX = paddle.x;
-    
-    // Yeni pozisyonu hesapla
     paddle.x += paddle.dx;
 
     // Duvar kontrolü - ekran boyutuna göre sınırla
@@ -455,7 +451,7 @@ function resizeCanvas() {
 
     // Canvas boyutlarını güncelle
     if (containerWidth < maxWidth) {
-        canvas.width = containerWidth - 20; // padding'i azalttım
+        canvas.width = Math.min(containerWidth - 10, maxWidth);
         canvas.height = canvas.width * aspectRatio;
     } else {
         canvas.width = maxWidth;
@@ -473,31 +469,23 @@ function resizeCanvas() {
 
     // Paddle pozisyonlarını ayarla
     if (playerId === 2) {
-        paddle.y = 50;
-        opponentPaddle.y = canvas.height - opponentPaddle.height - 10;
+        paddle.y = paddle.height + 10;
+        opponentPaddle.y = canvas.height - (opponentPaddle.height * 2);
     } else {
-        paddle.y = canvas.height - paddle.height - 10;
-        opponentPaddle.y = 50;
+        paddle.y = canvas.height - (paddle.height * 2);
+        opponentPaddle.y = opponentPaddle.height + 10;
     }
 
-    // Paddle'ın x pozisyonunu ekran içinde tut
-    if (paddle.x + paddle.width > canvas.width) {
-        paddle.x = canvas.width - paddle.width;
-    }
-    if (opponentPaddle.x + opponentPaddle.width > canvas.width) {
-        opponentPaddle.x = canvas.width - opponentPaddle.width;
-    }
+    // Paddle'ların x pozisyonlarını ekran içinde tut
+    paddle.x = Math.min(Math.max(paddle.x, 0), canvas.width - paddle.width);
+    opponentPaddle.x = Math.min(Math.max(opponentPaddle.x, 0), canvas.width - opponentPaddle.width);
 
     // Top boyutunu güncelle
     ball.size = 10 * scale;
 
     // Topun pozisyonunu ekran içinde tut
-    if (ball.x + ball.size > canvas.width) {
-        ball.x = canvas.width - ball.size;
-    }
-    if (ball.y + ball.size > canvas.height) {
-        ball.y = canvas.height - ball.size;
-    }
+    ball.x = Math.min(Math.max(ball.x, ball.size), canvas.width - ball.size);
+    ball.y = Math.min(Math.max(ball.y, ball.size), canvas.height - ball.size);
 
     // Font boyutlarını güncelle
     const fontSize = Math.max(16 * scale, 12);
