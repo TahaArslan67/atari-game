@@ -2,8 +2,13 @@ const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
 // Canvas boyutlarını ayarla
-canvas.width = 800;
-canvas.height = 600;
+const ORIGINAL_WIDTH = 800;
+const ORIGINAL_HEIGHT = 600;
+canvas.width = ORIGINAL_WIDTH;
+canvas.height = ORIGINAL_HEIGHT;
+
+// Ölçeklendirme için değişken
+let scale = 1;
 
 // Oyun nesneleri
 const paddle = {
@@ -447,38 +452,23 @@ function resizeCanvas() {
     const container = canvas.parentElement;
     const containerWidth = container.clientWidth;
     
-    // Maksimum genişlik sınırlaması
-    const maxWidth = Math.min(containerWidth - 20, 800);
+    // Maksimum genişliği hesapla
+    const maxWidth = Math.min(containerWidth - 20, ORIGINAL_WIDTH);
     
-    // En-boy oranını koru (4:3)
-    const aspectRatio = 3/4;
-    const newWidth = Math.min(maxWidth, containerWidth);
-    const newHeight = newWidth * aspectRatio;
+    // Yeni boyutları hesapla
+    const newWidth = maxWidth;
+    const newHeight = (newWidth * ORIGINAL_HEIGHT) / ORIGINAL_WIDTH;
     
-    // Canvas boyutlarını güncelle
+    // CSS boyutlarını ayarla
     canvas.style.width = `${newWidth}px`;
     canvas.style.height = `${newHeight}px`;
-    canvas.width = newWidth;
-    canvas.height = newHeight;
     
-    // Oyun elemanlarının ölçeklerini güncelle
-    const scale = newWidth / 800; // 800 referans genişlik
-    paddle.width = Math.max(10, Math.floor(80 * scale));
-    paddle.height = Math.max(5, Math.floor(10 * scale));
-    ball.size = Math.max(3, Math.floor(5 * scale));
+    // Ölçek faktörünü güncelle
+    scale = newWidth / ORIGINAL_WIDTH;
     
-    // Font boyutlarını güncelle
-    const baseFontSize = Math.max(12, Math.floor(16 * scale));
-    ctx.font = `${baseFontSize}px Poppins`;
-    
-    // Raketlerin pozisyonlarını güncelle
-    paddle.y = (canvas.height - paddle.height) / 2;
-    
-    // Topun pozisyonunu güncelle
-    if (!isMultiplayer || (isMultiplayer && playerId === 1)) {
-        ball.x = canvas.width / 2;
-        ball.y = canvas.height / 2;
-    }
+    // Canvas'ın çizim boyutlarını orijinal boyutta tut
+    canvas.width = ORIGINAL_WIDTH;
+    canvas.height = ORIGINAL_HEIGHT;
 }
 
 // Oyun döngüsü
