@@ -1,14 +1,59 @@
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
-// Canvas boyutlarını ayarla
-const ORIGINAL_WIDTH = 800;
-const ORIGINAL_HEIGHT = 600;
-canvas.width = ORIGINAL_WIDTH;
-canvas.height = ORIGINAL_HEIGHT;
+// Sabit değerler
+const CANVAS_RATIO = 4/3; // 800x600 = 4:3
+const PADDLE_BOTTOM_MARGIN = 40; // Alt paddle'ın alttan uzaklığı
+const PADDLE_TOP_MARGIN = 40; // Üst paddle'ın üstten uzaklığı
 
-// Ölçeklendirme için değişken
-let scale = 1;
+// Canvas boyutlarını ayarla
+function resizeCanvas() {
+    const container = canvas.parentElement;
+    const containerWidth = container.clientWidth;
+    const containerHeight = container.clientHeight;
+
+    // Minimum boyutlar
+    const MIN_WIDTH = 300;
+    const MIN_HEIGHT = MIN_WIDTH * (3/4);
+
+    // Maksimum boyutlar
+    const MAX_WIDTH = 800;
+    const MAX_HEIGHT = MAX_WIDTH * (3/4);
+
+    // Önce container'a göre boyutu hesapla
+    let newWidth = Math.min(containerWidth - 20, MAX_WIDTH);
+    let newHeight = newWidth * (3/4);
+
+    // Minimum boyutları kontrol et
+    newWidth = Math.max(MIN_WIDTH, newWidth);
+    newHeight = Math.max(MIN_HEIGHT, newHeight);
+
+    // Canvas boyutlarını ayarla
+    canvas.width = newWidth;
+    canvas.height = newHeight;
+
+    // Paddle ve top boyutlarını ölçekle
+    const scale = newWidth / 800;
+    paddle.width = Math.max(60, Math.floor(100 * scale));
+    paddle.height = Math.max(8, Math.floor(10 * scale));
+    opponentPaddle.width = paddle.width;
+    opponentPaddle.height = paddle.height;
+    ball.size = Math.max(5, Math.floor(10 * scale));
+
+    // Paddle pozisyonlarını güncelle
+    paddle.y = canvas.height - paddle.height - PADDLE_BOTTOM_MARGIN;
+    opponentPaddle.y = PADDLE_TOP_MARGIN;
+
+    // Paddle'ların x pozisyonlarını ortala
+    paddle.x = (canvas.width - paddle.width) / 2;
+    opponentPaddle.x = (canvas.width - opponentPaddle.width) / 2;
+
+    // Top pozisyonunu güncelle
+    if (!isMultiplayer || (isMultiplayer && playerId === 1)) {
+        ball.x = canvas.width / 2;
+        ball.y = canvas.height / 2;
+    }
+}
 
 // Oyun nesneleri
 const paddle = {
@@ -456,45 +501,6 @@ function updatePaddlePositions() {
     opponentPaddle.y = 50;
 }
 
-// Canvas boyutlarını ayarla
-function resizeCanvas() {
-    const container = canvas.parentElement;
-    const containerWidth = container.clientWidth;
-    
-    // Mobil için minimum boyutlar
-    const MIN_WIDTH = 300;
-    const MIN_HEIGHT = 400;
-    
-    // Maksimum genişliği hesapla
-    let newWidth = Math.max(MIN_WIDTH, Math.min(containerWidth - 20, 800));
-    let newHeight = (newWidth * 600) / 800;
-    
-    // Minimum yüksekliği kontrol et
-    if (newHeight < MIN_HEIGHT) {
-        newHeight = MIN_HEIGHT;
-        newWidth = (newHeight * 800) / 600;
-    }
-    
-    // Canvas boyutlarını ayarla
-    canvas.width = newWidth;
-    canvas.height = newHeight;
-    
-    // Paddle ve top boyutlarını ölçekle
-    const scale = newWidth / 800;
-    paddle.width = Math.max(60, Math.floor(100 * scale));
-    paddle.height = Math.max(8, Math.floor(10 * scale));
-    ball.size = Math.max(5, Math.floor(10 * scale));
-    
-    // Paddle pozisyonlarını güncelle
-    updatePaddlePositions();
-    
-    // Top pozisyonunu güncelle
-    if (!isMultiplayer || (isMultiplayer && playerId === 1)) {
-        ball.x = canvas.width / 2;
-        ball.y = canvas.height / 2;
-    }
-}
-
 // Event listener'ı güncelle
 window.addEventListener('resize', () => {
     resizeCanvas();
@@ -505,11 +511,31 @@ resizeCanvas();
 
 // Her frame'de paddle pozisyonlarını kontrol et
 function update() {
+    // Paddle'ı hareket ettir
     movePaddle();
+    
+    // Paddle'ın ekran dışına çıkmasını engelle
+    if (paddle.x < 0) paddle.x = 0;
+    if (paddle.x + paddle.width > canvas.width) paddle.x = canvas.width - paddle.width;
+    
+    // Alt paddle'ın y pozisyonunu sabit tut
+    paddle.y = canvas.height - paddle.height - PADDLE_BOTTOM_MARGIN;
+    
+    // Çok oyunculu modda
     if (isMultiplayer) {
-        updatePaddlePositions();
+        // Üst paddle'ın y pozisyonunu sabit tut
+        opponentPaddle.y = PADDLE_TOP_MARGIN;
+        
+        // Sadece Player 1 topu hareket ettirir
+        if (playerId === 1) {
+            moveBall();
+            sendBallPosition();
+        }
+        sendPaddlePosition();
+    } else {
+        moveBall();
     }
-    moveBall();
+    
     draw();
     requestAnimationFrame(update);
 }
