@@ -45,9 +45,9 @@ let isMultiplayer = false;
 let waitingForOpponent = false;
 
 // Ses efektleri
-const startSound = new Audio('sounds/baslangicsesi.wav');
-const hittingSound = new Audio('sounds/hittingSound.wav');
-const scoreSound = new Audio('sounds/hittingSound.wav');
+const startSound = new Audio('sounds/baslangicsesi.WAV');
+const hittingSound = new Audio('sounds/hittingsound.WAV');
+const scoreSound = new Audio('sounds/hittingsound.WAV');
 
 let isSoundEnabled = true;
 let player1Score = 0;
