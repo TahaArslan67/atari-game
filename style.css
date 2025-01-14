@@ -153,4 +153,60 @@ button:active {
     body {
         background: linear-gradient(45deg, #121212, #1a1a1a);
     }
+}
+
+/* Mobil Kontroller */
+.mobile-controls {
+    display: none;
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    gap: 20px;
+    z-index: 1000;
+}
+
+.control-button {
+    width: 60px;
+    height: 60px;
+    background: rgba(74, 144, 226, 0.3);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    backdrop-filter: blur(5px);
+    transition: all 0.2s ease;
+}
+
+.control-button:active {
+    background: rgba(74, 144, 226, 0.5);
+    transform: scale(0.95);
+}
+
+.control-button svg {
+    width: 30px;
+    height: 30px;
+    fill: white;
+}
+
+/* Tablet ve Mobil için kontrolleri göster */
+@media (max-width: 1024px) {
+    .mobile-controls {
+        display: flex;
+    }
+}
+
+/* Mobil için özel ayarlar */
+@media (max-width: 480px) {
+    .control-button {
+        width: 50px;
+        height: 50px;
+    }
+    
+    .control-button svg {
+        width: 25px;
+        height: 25px;
+    }
 } 

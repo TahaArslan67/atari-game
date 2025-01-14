@@ -571,4 +571,67 @@ function playSound(sound) {
     }
 }
 
+// Mobil kontroller
+const leftBtn = document.getElementById('leftBtn');
+const rightBtn = document.getElementById('rightBtn');
+
+// Dokunmatik kontroller için değişkenler
+let isTouchingLeft = false;
+let isTouchingRight = false;
+
+// Dokunmatik olayları
+leftBtn.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    isTouchingLeft = true;
+    paddle.dx = -paddle.speed;
+});
+
+leftBtn.addEventListener('touchend', (e) => {
+    e.preventDefault();
+    isTouchingLeft = false;
+    if (!isTouchingRight) paddle.dx = 0;
+});
+
+rightBtn.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    isTouchingRight = true;
+    paddle.dx = paddle.speed;
+});
+
+rightBtn.addEventListener('touchend', (e) => {
+    e.preventDefault();
+    isTouchingRight = false;
+    if (!isTouchingLeft) paddle.dx = 0;
+});
+
+// Mouse kontrolleri (tablet için)
+leftBtn.addEventListener('mousedown', () => {
+    isTouchingLeft = true;
+    paddle.dx = -paddle.speed;
+});
+
+leftBtn.addEventListener('mouseup', () => {
+    isTouchingLeft = false;
+    if (!isTouchingRight) paddle.dx = 0;
+});
+
+rightBtn.addEventListener('mousedown', () => {
+    isTouchingRight = true;
+    paddle.dx = paddle.speed;
+});
+
+rightBtn.addEventListener('mouseup', () => {
+    isTouchingRight = false;
+    if (!isTouchingLeft) paddle.dx = 0;
+});
+
+// Mouse için global mouseup olayı
+document.addEventListener('mouseup', () => {
+    if (isTouchingLeft || isTouchingRight) {
+        isTouchingLeft = false;
+        isTouchingRight = false;
+        paddle.dx = 0;
+    }
+});
+
 update(); 
