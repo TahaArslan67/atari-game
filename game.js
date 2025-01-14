@@ -451,7 +451,7 @@ function resizeCanvas() {
 
     // Canvas boyutlarını güncelle
     if (containerWidth < maxWidth) {
-        canvas.width = Math.min(containerWidth - 10, maxWidth);
+        canvas.width = containerWidth - 20;
         canvas.height = canvas.width * aspectRatio;
     } else {
         canvas.width = maxWidth;
@@ -462,18 +462,20 @@ function resizeCanvas() {
     const scale = canvas.width / 800;
 
     // Paddle boyutlarını güncelle
-    paddle.width = 100 * scale;
-    paddle.height = 10 * scale;
-    opponentPaddle.width = 100 * scale;
-    opponentPaddle.height = 10 * scale;
+    paddle.width = Math.max(60 * scale, 40);
+    paddle.height = Math.max(8 * scale, 5);
+    opponentPaddle.width = paddle.width;
+    opponentPaddle.height = paddle.height;
 
     // Paddle pozisyonlarını ayarla
+    const paddleMargin = 20 * scale;
+    
     if (playerId === 2) {
-        paddle.y = paddle.height + 10;
-        opponentPaddle.y = canvas.height - (opponentPaddle.height * 2);
+        paddle.y = paddleMargin;
+        opponentPaddle.y = canvas.height - paddleMargin - opponentPaddle.height;
     } else {
-        paddle.y = canvas.height - (paddle.height * 2);
-        opponentPaddle.y = opponentPaddle.height + 10;
+        paddle.y = canvas.height - paddleMargin - paddle.height;
+        opponentPaddle.y = paddleMargin;
     }
 
     // Paddle'ların x pozisyonlarını ekran içinde tut
@@ -481,14 +483,14 @@ function resizeCanvas() {
     opponentPaddle.x = Math.min(Math.max(opponentPaddle.x, 0), canvas.width - opponentPaddle.width);
 
     // Top boyutunu güncelle
-    ball.size = 10 * scale;
+    ball.size = Math.max(6 * scale, 4);
 
     // Topun pozisyonunu ekran içinde tut
     ball.x = Math.min(Math.max(ball.x, ball.size), canvas.width - ball.size);
     ball.y = Math.min(Math.max(ball.y, ball.size), canvas.height - ball.size);
 
     // Font boyutlarını güncelle
-    const fontSize = Math.max(16 * scale, 12);
+    const fontSize = Math.max(14 * scale, 10);
     ctx.font = `${fontSize}px Arial`;
 }
 
