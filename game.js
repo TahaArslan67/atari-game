@@ -253,7 +253,7 @@ function startMultiplayer() {
     player2Score = 0;
 
     // Socket.IO bağlantısını kur
-    const serverUrl = 'https://atari-game-production.up.railway.app';
+    const serverUrl = 'https://pleasing-radiance-production.up.railway.app';
     ws = io(serverUrl, {
         transports: ['websocket'],
         upgrade: false
