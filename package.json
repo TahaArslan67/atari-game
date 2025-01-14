@@ -2,14 +2,15 @@
   "name": "atari-game",
   "version": "1.0.0",
   "description": "Web tabanlı çok oyunculu Atari oyunu",
-  "main": "server.js",
   "scripts": {
-    "start": "node server.js",
-    "build": "npm install"
+    "start": "node server.js"
   },
   "dependencies": {
     "cors": "^2.8.5",
     "express": "^4.18.2",
     "socket.io": "^4.7.2"
+  },
+  "engines": {
+    "node": "18.x"
   }
 } 
