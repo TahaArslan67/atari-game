@@ -45,9 +45,9 @@ let isMultiplayer = false;
 let waitingForOpponent = false;
 
 // Ses efektleri
-const startSound = new Audio('sounds/baslangicsesi');
-const hittingSound = new Audio('C:\Users\MONSTER\Desktop\atari-game\sounds\hit.mp3'); 
-const scoreSound = new Audio('sounds/score.mp3');
+const startSound = new Audio('sounds/baslangicsesi.WAV');
+const hittingSound = new Audio('sounds/hittingsound.WAV');
+const scoreSound = new Audio('sounds/hittingsound.WAV');
 
 let isSoundEnabled = true;
 let player1Score = 0;
