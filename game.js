@@ -208,7 +208,7 @@ function resetGame() {
 function drawBall() {
     ctx.beginPath();
     ctx.arc(ball.x, ball.y, ball.size, 0, Math.PI * 2);
-    ctx.fillStyle = '#fff';
+    ctx.fillStyle = playerId === 2 ? '#ff0000' : '#fff';
     ctx.fill();
     ctx.closePath();
 }
