@@ -16,5 +16,7 @@
     "node": "18.x",
     "npm": "9.x"
   },
-  "private": true
+  "private": true,
+  "author": "",
+  "license": "ISC"
 } 

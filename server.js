@@ -43,7 +43,8 @@ app.get('/health', (req, res) => {
     res.json({ 
         status: 'ok',
         timestamp: new Date().toISOString(),
-        uptime: process.uptime()
+        uptime: process.uptime(),
+        port: process.env.PORT || 3000
     });
 });
 
@@ -141,8 +142,32 @@ io.on('connection', (socket) => {
 
 // Sunucuyu başlat
 const PORT = process.env.PORT || 3000;
-const HOST = '0.0.0.0';
 
-httpServer.listen(PORT, HOST, () => {
-    debug(`Server is running on http://${HOST}:${PORT}`);
-}); 
+try {
+    httpServer.listen(PORT, () => {
+        debug(`Server is running on port ${PORT}`);
+        debug('Environment:', process.env.NODE_ENV);
+        debug('Process ID:', process.pid);
+    });
+
+    // Beklenmeyen hataları yakala
+    process.on('uncaughtException', (error) => {
+        debug('Uncaught Exception:', error);
+    });
+
+    process.on('unhandledRejection', (error) => {
+        debug('Unhandled Rejection:', error);
+    });
+
+    // Graceful shutdown
+    process.on('SIGTERM', () => {
+        debug('SIGTERM received. Shutting down gracefully...');
+        httpServer.close(() => {
+            debug('Server closed');
+            process.exit(0);
+        });
+    });
+} catch (error) {
+    debug('Server start error:', error);
+    process.exit(1);
+} 
