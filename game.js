@@ -243,13 +243,15 @@ function updateScore(winner) {
     
     // Skor güncellemesini tüm oyunculara gönder
     if (ws && ws.connected) {
-        console.log('Skor güncellemesi gönderiliyor:', { player1Score, player2Score }); // Debug log
-        ws.emit('update_score', {
+        const scoreData = {
             player1Score: player1Score,
             player2Score: player2Score,
             lastWinner: ball.lastWinner,
             timestamp: Date.now()
-        });
+        };
+        
+        console.log('Skor güncellemesi gönderiliyor:', scoreData); // Debug log
+        ws.emit('update_score', scoreData);
     }
     
     playSound(scoreSound);
@@ -364,13 +366,26 @@ function startMultiplayer() {
     // Skor güncelleme olayını dinle
     ws.on('update_score', (data) => {
         console.log('Skor güncelleme alındı:', data); // Debug log
+        
+        // Skorları güncelle
         if (data && typeof data.player1Score === 'number' && typeof data.player2Score === 'number') {
+            // Global değişkenleri güncelle
+            window.player1Score = data.player1Score;
+            window.player2Score = data.player2Score;
+            
+            // Yerel değişkenleri güncelle
             player1Score = data.player1Score;
             player2Score = data.player2Score;
+            
             ball.lastWinner = data.lastWinner;
             
             // Skor değiştiğinde konsola yazdır
-            console.log('Güncel skorlar:', { player1Score, player2Score, playerId });
+            console.log('Güncel skorlar:', {
+                player1Score: window.player1Score,
+                player2Score: window.player2Score,
+                playerId: playerId,
+                from: 'update_score event'
+            });
         }
     });
 }
@@ -455,16 +470,19 @@ function update() {
         ctx.textAlign = 'center';
         
         // Debug için skor ve oyuncu bilgilerini yazdır
-        console.log('Çizim öncesi skorlar:', { player1Score, player2Score, playerId });
+        console.log('Çizim öncesi skorlar:', {
+            player1Score,
+            player2Score,
+            playerId,
+            from: 'update function'
+        });
         
         // Player 2 için skorları ters çevir
-        if (playerId === 2) {
-            ctx.fillText(`Siz: ${player2Score}`, canvas.width / 4, 30);
-            ctx.fillText(`Rakip: ${player1Score}`, canvas.width * 3 / 4, 30);
-        } else {
-            ctx.fillText(`Siz: ${player1Score}`, canvas.width / 4, 30);
-            ctx.fillText(`Rakip: ${player2Score}`, canvas.width * 3 / 4, 30);
-        }
+        const myScore = playerId === 2 ? player2Score : player1Score;
+        const opponentScore = playerId === 2 ? player1Score : player2Score;
+        
+        ctx.fillText(`Siz: ${myScore}`, canvas.width / 4, 30);
+        ctx.fillText(`Rakip: ${opponentScore}`, canvas.width * 3 / 4, 30);
         
         ctx.font = '16px Arial';
         ctx.textAlign = 'left';
