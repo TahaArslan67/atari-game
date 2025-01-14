@@ -22,8 +22,10 @@ const ball = {
     y: 300,
     size: 10,
     speed: 4,
-    dx: 4,
-    dy: -4
+    dx: 0,
+    dy: 0,
+    isWaiting: false,
+    lastWinner: null
 };
 
 let score = 0;
@@ -93,6 +95,8 @@ function movePaddle() {
 
 // Topu hareket ettir
 function moveBall() {
+    if (ball.isWaiting) return;
+
     const nextX = ball.x + ball.dx;
     const nextY = ball.y + ball.dy;
 
@@ -178,21 +182,23 @@ function resetGame() {
     ball.x = canvas.width / 2;
     ball.y = canvas.height / 2;
     ball.speed = 4;
+    ball.dx = 0;
+    ball.dy = 0;
+    ball.isWaiting = true;
     
     if (isMultiplayer) {
-        // Top, kaybeden oyuncudan kazanan oyuncuya doğru gider
-        if (ball.y <= 0 || (playerId === 1 && ball.y >= canvas.height)) {
-            // Üst oyuncu kaybetti veya alt oyuncu (playerId 1) kazandı
-            ball.dy = ball.speed; // Top aşağı gider
-        } else if (ball.y >= canvas.height || (playerId === 2 && ball.y <= 0)) {
-            // Alt oyuncu kaybetti veya üst oyuncu (playerId 2) kazandı
-            ball.dy = -ball.speed; // Top yukarı gider
-        } else {
-            // Oyun yeni başlıyorsa
-            ball.dy = playerId === 1 ? -ball.speed : ball.speed;
-        }
-        // Her durumda rastgele x yönü
-        ball.dx = (Math.random() * 2 - 1) * ball.speed;
+        setTimeout(() => {
+            ball.isWaiting = false;
+            // Top yönünü son kazanana göre belirle
+            if (ball.lastWinner) {
+                ball.dy = ball.lastWinner === 1 ? ball.speed : -ball.speed;
+            } else {
+                // İlk başlangıçta rastgele yön
+                ball.dy = Math.random() < 0.5 ? ball.speed : -ball.speed;
+            }
+            // Her durumda rastgele x yönü
+            ball.dx = (Math.random() * 2 - 1) * ball.speed;
+        }, 1000);
     } else {
         ball.dx = (Math.random() * 2 - 1) * ball.speed;
         ball.dy = -ball.speed;
@@ -233,8 +239,10 @@ function drawOpponentPaddle() {
 function updateScore(winner) {
     if (winner === 1) {
         player1Score++;
+        ball.lastWinner = 1;
     } else if (winner === 2) {
         player2Score++;
+        ball.lastWinner = 2;
     }
     
     if (isSoundEnabled) {
