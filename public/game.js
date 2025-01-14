@@ -1,7 +1,7 @@
 // Sunucu URL'si
-const serverUrl = process.env.NODE_ENV === 'production' 
-    ? 'https://atari-game-server.vercel.app'  // Production URL'i
-    : 'http://localhost:3000';                // Development URL'i
+const serverUrl = window.location.hostname === 'localhost' 
+    ? 'http://localhost:3000'                // Development URL'i
+    : 'https://atari-game-server.vercel.app';  // Production URL'i
 
 // Oyun değişkenleri
 let socket = null;
@@ -59,9 +59,9 @@ function moveBall() {
 }
 
 // Ses efektleri
-const startSound = new Audio('https://raw.githubusercontent.com/TahaArslan67/atari-game/master/sounds/baslangicsesi.WAV');
-const hittingSound = new Audio('https://raw.githubusercontent.com/TahaArslan67/atari-game/master/sounds/hittingsound.WAV');
-const scoreSound = new Audio('https://raw.githubusercontent.com/TahaArslan67/atari-game/master/sounds/hittingsound.WAV');
+const startSound = new Audio('sounds/baslangicsesi.WAV');
+const hittingSound = new Audio('sounds/hittingsound.WAV');
+const scoreSound = new Audio('sounds/hittingsound.WAV');
 
 // Ses çalma fonksiyonu
 function playSound(sound) {
