@@ -241,6 +241,15 @@ function updateScore(winner) {
         ball.lastWinner = 2;
     }
     
+    // Skor güncellemesini diğer oyuncuya gönder
+    if (ws && ws.connected) {
+        ws.emit('score_update', {
+            player1Score: player1Score,
+            player2Score: player2Score,
+            lastWinner: ball.lastWinner
+        });
+    }
+    
     playSound(scoreSound);
 }
 
@@ -292,12 +301,15 @@ function startMultiplayer() {
 
     ws.on('init', (data) => {
         playerId = data.playerId;
+        // Mevcut skorları sıfırla
+        player1Score = 0;
+        player2Score = 0;
+        
         if (playerId === 2) {
             paddle.y = 50;
             paddle.color = '#ff0000';
             opponentPaddle.y = 550;
             opponentPaddle.color = '#fff';
-            // Player 2 için top başlangıç pozisyonunu ayarla
             ball.y = canvas.height / 2;
             ball.x = canvas.width / 2;
         } else {
@@ -305,7 +317,6 @@ function startMultiplayer() {
             paddle.color = '#fff';
             opponentPaddle.y = 50;
             opponentPaddle.color = '#ff0000';
-            // Player 1 için top başlangıç pozisyonunu ayarla
             ball.y = canvas.height / 2;
             ball.x = canvas.width / 2;
         }
@@ -344,6 +355,13 @@ function startMultiplayer() {
         isMultiplayer = false;
         waitingForOpponent = false;
         alert('Sunucu bağlantısı kesildi!');
+    });
+
+    // Skor güncelleme olayını dinle
+    ws.on('score_update', (data) => {
+        player1Score = data.player1Score;
+        player2Score = data.player2Score;
+        ball.lastWinner = data.lastWinner;
     });
 }
 
