@@ -13,6 +13,10 @@ const debug = (...args) => {
 
 debug('Server starting...');
 
+// Express ayarları
+app.set('trust proxy', true);
+app.disable('x-powered-by');
+
 // CORS ayarları
 app.use(cors({
     origin: '*',
@@ -44,7 +48,8 @@ app.get('/health', (req, res) => {
         status: 'ok',
         timestamp: new Date().toISOString(),
         uptime: process.uptime(),
-        port: process.env.PORT || 3000
+        port: process.env.PORT || 3000,
+        env: process.env.NODE_ENV
     });
 });
 
@@ -143,31 +148,14 @@ io.on('connection', (socket) => {
 // Sunucuyu başlat
 const PORT = process.env.PORT || 3000;
 
-try {
-    httpServer.listen(PORT, () => {
-        debug(`Server is running on port ${PORT}`);
-        debug('Environment:', process.env.NODE_ENV);
-        debug('Process ID:', process.pid);
-    });
+debug('Starting server with config:', {
+    port: PORT,
+    env: process.env.NODE_ENV,
+    nodeVersion: process.version
+});
 
-    // Beklenmeyen hataları yakala
-    process.on('uncaughtException', (error) => {
-        debug('Uncaught Exception:', error);
-    });
-
-    process.on('unhandledRejection', (error) => {
-        debug('Unhandled Rejection:', error);
-    });
-
-    // Graceful shutdown
-    process.on('SIGTERM', () => {
-        debug('SIGTERM received. Shutting down gracefully...');
-        httpServer.close(() => {
-            debug('Server closed');
-            process.exit(0);
-        });
-    });
-} catch (error) {
-    debug('Server start error:', error);
-    process.exit(1);
-} 
+httpServer.listen(PORT, () => {
+    debug(`Server is running on port ${PORT}`);
+    debug('Environment:', process.env.NODE_ENV);
+    debug('Process ID:', process.pid);
+}); 
