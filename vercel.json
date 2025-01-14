@@ -1,27 +1,17 @@
 {
     "version": 2,
     "builds": [
-        { "src": "*.html", "use": "@vercel/static" },
-        { "src": "*.css", "use": "@vercel/static" },
-        { "src": "*.js", "use": "@vercel/static" },
-        { "src": "api/server.js", "use": "@vercel/node" }
-    ],
-    "routes": [
-        { 
-            "src": "/api/socketio",
-            "dest": "api/server.js"
-        },
-        { 
-            "src": "/socket.io/(.*)",
-            "dest": "api/server.js"
+        {
+            "src": "index.html",
+            "use": "@vercel/static"
         },
         {
-            "src": "/api/socketio/(.*)",
-            "dest": "api/server.js"
+            "src": "style.css",
+            "use": "@vercel/static"
         },
-        { 
-            "src": "/(.*)",
-            "dest": "/$1"
+        {
+            "src": "game.js",
+            "use": "@vercel/static"
         }
     ]
 } 
