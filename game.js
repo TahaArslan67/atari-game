@@ -1,6 +1,5 @@
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
-const scoreElement = document.getElementById('scoreValue');
 
 // Canvas boyutlarını ayarla
 canvas.width = 800;
@@ -202,10 +201,8 @@ function resetGame() {
     } else {
         ball.dx = (Math.random() * 2 - 1) * ball.speed;
         ball.dy = -ball.speed;
+        score = 0;
     }
-
-    score = 0;
-    scoreElement.innerHTML = score;
 }
 
 // Çizim fonksiyonları
