@@ -491,4 +491,16 @@ document.addEventListener('click', () => {
     }
 }, { once: true });
 
+// Ses çalma fonksiyonu
+function playSound(sound) {
+    if (isSoundEnabled && sound) {
+        // Sesi baştan başlat
+        sound.currentTime = 0;
+        // Sesi çal
+        sound.play().catch(error => {
+            console.log('Ses çalma hatası:', error);
+        });
+    }
+}
+
 update(); 
