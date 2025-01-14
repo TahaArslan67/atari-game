@@ -243,7 +243,8 @@ function updateScore(winner) {
     
     // Skor güncellemesini tüm oyunculara gönder
     if (ws && ws.connected) {
-        ws.emit('score_update', {
+        console.log('Skor güncellemesi gönderiliyor:', { player1Score, player2Score }); // Debug log
+        ws.emit('update_score', {
             player1Score: player1Score,
             player2Score: player2Score,
             lastWinner: ball.lastWinner,
@@ -302,6 +303,8 @@ function startMultiplayer() {
 
     ws.on('init', (data) => {
         playerId = data.playerId;
+        console.log('Player ID:', playerId); // Debug log
+        
         // Mevcut skorları sıfırla
         player1Score = 0;
         player2Score = 0;
@@ -359,11 +362,16 @@ function startMultiplayer() {
     });
 
     // Skor güncelleme olayını dinle
-    ws.on('score_update', (data) => {
+    ws.on('update_score', (data) => {
         console.log('Skor güncelleme alındı:', data); // Debug log
-        player1Score = data.player1Score;
-        player2Score = data.player2Score;
-        ball.lastWinner = data.lastWinner;
+        if (data && typeof data.player1Score === 'number' && typeof data.player2Score === 'number') {
+            player1Score = data.player1Score;
+            player2Score = data.player2Score;
+            ball.lastWinner = data.lastWinner;
+            
+            // Skor değiştiğinde konsola yazdır
+            console.log('Güncel skorlar:', { player1Score, player2Score, playerId });
+        }
     });
 }
 
@@ -446,13 +454,16 @@ function update() {
         ctx.font = '24px Arial';
         ctx.textAlign = 'center';
         
+        // Debug için skor ve oyuncu bilgilerini yazdır
+        console.log('Çizim öncesi skorlar:', { player1Score, player2Score, playerId });
+        
         // Player 2 için skorları ters çevir
         if (playerId === 2) {
-            ctx.fillText(`Player 2: ${player2Score}`, canvas.width / 4, 30);
-            ctx.fillText(`Player 1: ${player1Score}`, canvas.width * 3 / 4, 30);
+            ctx.fillText(`Siz: ${player2Score}`, canvas.width / 4, 30);
+            ctx.fillText(`Rakip: ${player1Score}`, canvas.width * 3 / 4, 30);
         } else {
-            ctx.fillText(`Player 1: ${player1Score}`, canvas.width / 4, 30);
-            ctx.fillText(`Player 2: ${player2Score}`, canvas.width * 3 / 4, 30);
+            ctx.fillText(`Siz: ${player1Score}`, canvas.width / 4, 30);
+            ctx.fillText(`Rakip: ${player2Score}`, canvas.width * 3 / 4, 30);
         }
         
         ctx.font = '16px Arial';
