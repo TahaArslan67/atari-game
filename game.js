@@ -45,9 +45,9 @@ let isMultiplayer = false;
 let waitingForOpponent = false;
 
 // Ses efektleri
-const startSound = new Audio('sounds/baslangicsesi.WAV');
-const hittingSound = new Audio('sounds/hittingsound.WAV');
-const scoreSound = new Audio('sounds/hittingsound.WAV');
+const startSound = new Audio('https://raw.githubusercontent.com/TahaArslan67/atari-game/master/sounds/baslangicsesi.WAV');
+const hittingSound = new Audio('https://raw.githubusercontent.com/TahaArslan67/atari-game/master/sounds/hittingsound.WAV');
+const scoreSound = new Audio('https://raw.githubusercontent.com/TahaArslan67/atari-game/master/sounds/hittingsound.WAV');
 
 let isSoundEnabled = true;
 let player1Score = 0;
@@ -469,9 +469,11 @@ function playSound(sound) {
     }
 }
 
-// Oyun başlangıç sesi
-window.addEventListener('load', () => {
-    playSound(startSound);
-});
+// Oyun başlangıç sesi - kullanıcı etkileşimi sonrası çal
+document.addEventListener('click', () => {
+    if (!startSound.played.length) {
+        playSound(startSound);
+    }
+}, { once: true });
 
 update(); 
