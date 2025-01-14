@@ -253,9 +253,6 @@ function updateScore(winner) {
         
         console.log('Skor güncellemesi gönderiliyor:', scoreData);
         ws.emit('update_score', scoreData);
-        
-        // Yerel olarak da skoru güncelle
-        updateScoreDisplay(scoreData);
     }
     
     playSound(scoreSound);
@@ -386,7 +383,22 @@ function startMultiplayer() {
     // Skor güncelleme olayını dinle
     ws.on('update_score', (data) => {
         console.log('Skor güncelleme alındı:', data);
-        updateScoreDisplay(data);
+        
+        // Skorları güncelle
+        if (data && typeof data.player1Score === 'number' && typeof data.player2Score === 'number') {
+            // Skorları güncelle
+            player1Score = data.player1Score;
+            player2Score = data.player2Score;
+            ball.lastWinner = data.lastWinner;
+            
+            // Debug için skoru yazdır
+            console.log('Güncel skorlar:', {
+                player1Score,
+                player2Score,
+                playerId,
+                from: 'update_score event'
+            });
+        }
     });
 }
 
@@ -469,12 +481,22 @@ function update() {
         ctx.font = '24px Arial';
         ctx.textAlign = 'center';
         
-        // Skorları göster
-        const myScore = playerId === 2 ? player2Score : player1Score;
-        const opponentScore = playerId === 2 ? player1Score : player2Score;
+        // Debug için skor ve oyuncu bilgilerini yazdır
+        console.log('Çizim öncesi skorlar:', {
+            player1Score,
+            player2Score,
+            playerId,
+            from: 'update function'
+        });
         
-        ctx.fillText(`Siz: ${myScore}`, canvas.width / 4, 30);
-        ctx.fillText(`Rakip: ${opponentScore}`, canvas.width * 3 / 4, 30);
+        // Skorları göster
+        if (playerId === 2) {
+            ctx.fillText(`Siz (Kırmızı): ${player2Score}`, canvas.width / 4, 30);
+            ctx.fillText(`Rakip (Beyaz): ${player1Score}`, canvas.width * 3 / 4, 30);
+        } else {
+            ctx.fillText(`Siz (Beyaz): ${player1Score}`, canvas.width / 4, 30);
+            ctx.fillText(`Rakip (Kırmızı): ${player2Score}`, canvas.width * 3 / 4, 30);
+        }
         
         ctx.font = '16px Arial';
         ctx.textAlign = 'left';
