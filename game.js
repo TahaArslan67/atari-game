@@ -447,109 +447,70 @@ function showWinner(message) {
 // Zaman takibi için değişken
 let lastUpdateTime = Date.now();
 
-// Canvas boyutlarını responsive yap
+// Paddle pozisyonlarını ayarla
+function updatePaddlePositions() {
+    // Alt paddle pozisyonu - ekranın altından yukarı doğru belirli bir mesafe
+    paddle.y = canvas.height - paddle.height - 50;
+
+    // Üst paddle pozisyonu - ekranın üstünden aşağı doğru belirli bir mesafe
+    opponentPaddle.y = 50;
+}
+
+// Canvas boyutlarını ayarla
 function resizeCanvas() {
     const container = canvas.parentElement;
     const containerWidth = container.clientWidth;
     
+    // Mobil için minimum boyutlar
+    const MIN_WIDTH = 300;
+    const MIN_HEIGHT = 400;
+    
     // Maksimum genişliği hesapla
-    const maxWidth = Math.min(containerWidth - 20, ORIGINAL_WIDTH);
+    let newWidth = Math.max(MIN_WIDTH, Math.min(containerWidth - 20, 800));
+    let newHeight = (newWidth * 600) / 800;
     
-    // Yeni boyutları hesapla
-    const newWidth = maxWidth;
-    const newHeight = (newWidth * ORIGINAL_HEIGHT) / ORIGINAL_WIDTH;
+    // Minimum yüksekliği kontrol et
+    if (newHeight < MIN_HEIGHT) {
+        newHeight = MIN_HEIGHT;
+        newWidth = (newHeight * 800) / 600;
+    }
     
-    // CSS boyutlarını ayarla
-    canvas.style.width = `${newWidth}px`;
-    canvas.style.height = `${newHeight}px`;
+    // Canvas boyutlarını ayarla
+    canvas.width = newWidth;
+    canvas.height = newHeight;
     
-    // Ölçek faktörünü güncelle
-    scale = newWidth / ORIGINAL_WIDTH;
+    // Paddle ve top boyutlarını ölçekle
+    const scale = newWidth / 800;
+    paddle.width = Math.max(60, Math.floor(100 * scale));
+    paddle.height = Math.max(8, Math.floor(10 * scale));
+    ball.size = Math.max(5, Math.floor(10 * scale));
     
-    // Canvas'ın çizim boyutlarını orijinal boyutta tut
-    canvas.width = ORIGINAL_WIDTH;
-    canvas.height = ORIGINAL_HEIGHT;
+    // Paddle pozisyonlarını güncelle
+    updatePaddlePositions();
+    
+    // Top pozisyonunu güncelle
+    if (!isMultiplayer || (isMultiplayer && playerId === 1)) {
+        ball.x = canvas.width / 2;
+        ball.y = canvas.height / 2;
+    }
 }
 
-// Oyun döngüsü
+// Event listener'ı güncelle
+window.addEventListener('resize', () => {
+    resizeCanvas();
+});
+
+// İlk yükleme için resize'ı çağır
+resizeCanvas();
+
+// Her frame'de paddle pozisyonlarını kontrol et
 function update() {
-    const currentTime = Date.now();
-    const deltaTime = currentTime - lastUpdateTime;
-
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    if (waitingForOpponent && isMultiplayer) {
-        ctx.fillStyle = '#fff';
-        const fontSize = Math.max(24 * (canvas.width / 800), 14);
-        ctx.font = `${fontSize}px Arial`;
-        ctx.textAlign = 'center';
-        ctx.fillText('Rakip bekleniyor...', canvas.width / 2, canvas.height / 2);
-        ctx.fillText('Oda bağlantı linki:', canvas.width / 2, canvas.height / 2 + 40 * (canvas.width / 800));
-        ctx.fillText(window.location.href, canvas.width / 2, canvas.height / 2 + 80 * (canvas.width / 800));
-        requestAnimationFrame(update);
-        return;
-    }
-
-    // Skor tablosunu göster
-    if (!isMultiplayer) {
-        ctx.fillStyle = '#fff';
-        const fontSize = Math.max(24 * (canvas.width / 800), 14);
-        ctx.font = `${fontSize}px Arial`;
-        ctx.textAlign = 'left';
-        ctx.fillText(`Skor: ${score}`, 10 * (canvas.width / 800), 30 * (canvas.width / 800));
-    } else {
-        ctx.fillStyle = '#fff';
-        const fontSize = Math.max(24 * (canvas.width / 800), 14);
-        ctx.font = `${fontSize}px Arial`;
-        ctx.textAlign = 'center';
-        
-        if (playerId === 2) {
-            ctx.fillText(`Siz (Kırmızı): ${player2Score}`, canvas.width / 4, 30 * (canvas.width / 800));
-            ctx.fillText(`Rakip (Beyaz): ${player1Score}`, canvas.width * 3 / 4, 30 * (canvas.width / 800));
-        } else {
-            ctx.fillText(`Siz (Beyaz): ${player1Score}`, canvas.width / 4, 30 * (canvas.width / 800));
-            ctx.fillText(`Rakip (Kırmızı): ${player2Score}`, canvas.width * 3 / 4, 30 * (canvas.width / 800));
-        }
-        
-        const smallFontSize = Math.max(16 * (canvas.width / 800), 12);
-        ctx.font = `${smallFontSize}px Arial`;
-        ctx.textAlign = 'left';
-        ctx.fillText(`Top Hızı: ${Math.round(ball.speed * 10) / 10}`, 10 * (canvas.width / 800), 60 * (canvas.width / 800));
-    }
-
-    // Her zaman topu çiz
-    drawBall();
-    drawPaddle();
-    drawOpponentPaddle();
-
     movePaddle();
-    
-    // Çok oyunculu modda sadece Player 1 topu hareket ettirir
-    if (!isMultiplayer || (isMultiplayer && playerId === 1)) {
-        moveBall();
+    if (isMultiplayer) {
+        updatePaddlePositions();
     }
-
-    // Top pozisyonunu daha sık gönder
-    if (isMultiplayer && playerId === 1) {
-        sendBallPosition();
-    }
-
-    if (isMultiplayer && deltaTime >= 16) { // ~60fps
-        sendPaddlePosition();
-        lastUpdateTime = currentTime;
-    }
-
-    // Mesaj gösterimi
-    if (showGameMessage) {
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-        ctx.fillRect(0, canvas.height / 2 - 50, canvas.width, 100);
-        
-        ctx.fillStyle = '#fff';
-        ctx.font = '24px Arial';
-        ctx.textAlign = 'center';
-        ctx.fillText(gameMessage, canvas.width / 2, canvas.height / 2);
-    }
-
+    moveBall();
+    draw();
     requestAnimationFrame(update);
 }
 

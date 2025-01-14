@@ -119,25 +119,27 @@ button:active {
 @media (max-width: 480px) {
     body {
         padding: 5px;
-        justify-content: center;
         min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
     }
 
     .game-container {
         width: 100%;
         max-width: 100%;
+        min-height: 80vh;
         padding: 10px;
         margin: 0;
-        border-radius: 0;
-        background: none;
-        box-shadow: none;
-        backdrop-filter: none;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
     }
     
     canvas {
         width: 100%;
-        max-width: 300px;
         height: auto;
+        min-height: 400px;
         margin: 10px auto;
         border: 1px solid rgba(255, 255, 255, 0.2);
     }
@@ -164,21 +166,26 @@ button:active {
 
     .mobile-controls {
         position: fixed;
-        bottom: 20px;
+        bottom: 10px;
         left: 0;
         right: 0;
         width: 100%;
         display: flex;
         justify-content: center;
-        gap: 200px;
+        gap: 150px;
         padding: 0 20px;
         z-index: 1000;
     }
 
     .control-button {
-        width: 45px;
-        height: 45px;
-        background: rgba(74, 144, 226, 0.7);
+        width: 50px;
+        height: 50px;
+        background: rgba(74, 144, 226, 0.8);
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
     
     .control-button svg {
