@@ -233,28 +233,23 @@ function drawOpponentPaddle() {
 
 // Skor tablosunu güncelle
 function updateScore(winner) {
+    // Skoru güncelle
     if (winner === 1) {
         player1Score++;
-        ball.lastWinner = 1;
     } else if (winner === 2) {
         player2Score++;
-        ball.lastWinner = 2;
     }
-    
-    // Skor güncellemesini tüm oyunculara gönder
+
+    // Skor güncellemesini server'a gönder
     if (ws && ws.connected) {
-        const scoreData = {
-            player1Score: player1Score,
-            player2Score: player2Score,
-            lastWinner: ball.lastWinner,
-            timestamp: Date.now(),
-            sender: playerId
-        };
-        
-        console.log('Skor güncellemesi gönderiliyor:', scoreData);
-        ws.emit('update_score', scoreData);
+        ws.emit('score_update', {
+            player1Score,
+            player2Score,
+            winner,
+            timestamp: Date.now()
+        });
     }
-    
+
     playSound(scoreSound);
 }
 
@@ -322,9 +317,9 @@ function startMultiplayer() {
 
     ws.on('init', (data) => {
         playerId = data.playerId;
-        console.log('Player ID:', playerId); // Debug log
+        console.log('Player ID:', playerId);
         
-        // Mevcut skorları sıfırla
+        // Skorları sıfırla
         player1Score = 0;
         player2Score = 0;
         
@@ -333,15 +328,11 @@ function startMultiplayer() {
             paddle.color = '#ff0000';
             opponentPaddle.y = 550;
             opponentPaddle.color = '#fff';
-            ball.y = canvas.height / 2;
-            ball.x = canvas.width / 2;
         } else {
             paddle.y = 550;
             paddle.color = '#fff';
             opponentPaddle.y = 50;
             opponentPaddle.color = '#ff0000';
-            ball.y = canvas.height / 2;
-            ball.x = canvas.width / 2;
         }
     });
 
@@ -381,24 +372,17 @@ function startMultiplayer() {
     });
 
     // Skor güncelleme olayını dinle
-    ws.on('update_score', (data) => {
+    ws.on('score_update', (data) => {
         console.log('Skor güncelleme alındı:', data);
+        player1Score = data.player1Score;
+        player2Score = data.player2Score;
         
-        // Skorları güncelle
-        if (data && typeof data.player1Score === 'number' && typeof data.player2Score === 'number') {
-            // Skorları güncelle
-            player1Score = data.player1Score;
-            player2Score = data.player2Score;
-            ball.lastWinner = data.lastWinner;
-            
-            // Debug için skoru yazdır
-            console.log('Güncel skorlar:', {
-                player1Score,
-                player2Score,
-                playerId,
-                from: 'update_score event'
-            });
-        }
+        // Debug için skoru yazdır
+        console.log('Güncel skorlar:', {
+            player1Score,
+            player2Score,
+            playerId
+        });
     });
 }
 
@@ -480,14 +464,6 @@ function update() {
         ctx.fillStyle = '#fff';
         ctx.font = '24px Arial';
         ctx.textAlign = 'center';
-        
-        // Debug için skor ve oyuncu bilgilerini yazdır
-        console.log('Çizim öncesi skorlar:', {
-            player1Score,
-            player2Score,
-            playerId,
-            from: 'update function'
-        });
         
         // Skorları göster
         if (playerId === 2) {

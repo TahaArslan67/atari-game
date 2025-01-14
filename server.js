@@ -143,6 +143,34 @@ io.on('connection', (socket) => {
     socket.on('error', (error) => {
         debug('Socket error:', error);
     });
+
+    // Skor güncelleme olayını dinle
+    socket.on('score_update', (data) => {
+        try {
+            const socketRooms = Array.from(socket.rooms);
+            if (socketRooms.length > 1) {
+                const roomId = socketRooms[1];
+                
+                // Skoru tüm odaya yayınla (gönderen dahil)
+                io.in(roomId).emit('score_update', {
+                    player1Score: data.player1Score,
+                    player2Score: data.player2Score,
+                    winner: data.winner,
+                    timestamp: data.timestamp
+                });
+                
+                debug('Skor güncelleme yayınlandı:', {
+                    room: roomId,
+                    scores: {
+                        player1: data.player1Score,
+                        player2: data.player2Score
+                    }
+                });
+            }
+        } catch (error) {
+            debug('Skor güncelleme hatası:', error);
+        }
+    });
 });
 
 // Sunucuyu başlat
