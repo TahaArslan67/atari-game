@@ -114,39 +114,61 @@ button:active {
 }
 
 @media (max-width: 480px) {
-    .game-container {
-        width: 95%;
+    body {
         padding: 10px;
-        margin: 10px auto;
+    }
+
+    .game-container {
+        width: 100%;
+        padding: 10px;
+        margin: 5px auto;
+        border-radius: 10px;
     }
     
     canvas {
         width: 100%;
-        max-width: 350px;
+        max-width: 300px;
         height: auto;
-        margin-bottom: 10px;
+        margin-bottom: 15px;
     }
     
     .game-title {
-        font-size: 24px;
-        margin-bottom: 15px;
+        font-size: 22px;
+        margin-bottom: 10px;
+        margin-top: 10px;
     }
     
     .button-container {
         flex-direction: column;
         width: 100%;
+        gap: 10px;
+        margin-top: 10px;
     }
     
     button {
         width: 100%;
+        padding: 8px 16px;
+        font-size: 14px;
     }
     
     .score-display {
-        font-size: 20px;
+        font-size: 18px;
+        margin-bottom: 10px;
     }
 
     .mobile-controls {
-        bottom: 10px;
+        bottom: 20px;
+        gap: 30px;
+    }
+
+    .control-button {
+        width: 45px;
+        height: 45px;
+    }
+    
+    .control-button svg {
+        width: 22px;
+        height: 22px;
     }
 }
 
