@@ -449,8 +449,17 @@ function resizeCanvas() {
     const maxWidth = 800;
     const aspectRatio = 600 / 800;
 
+    // Mevcut pozisyonların oranlarını kaydet
+    const paddleRatioX = paddle.x / canvas.width;
+    const paddleRatioY = paddle.y / canvas.height;
+    const opponentRatioX = opponentPaddle.x / canvas.width;
+    const opponentRatioY = opponentPaddle.y / canvas.height;
+    const ballRatioX = ball.x / canvas.width;
+    const ballRatioY = ball.y / canvas.height;
+
+    // Canvas boyutlarını güncelle
     if (containerWidth < maxWidth) {
-        canvas.width = containerWidth - 40; // padding için
+        canvas.width = containerWidth - 40;
         canvas.height = canvas.width * aspectRatio;
     } else {
         canvas.width = maxWidth;
@@ -458,7 +467,7 @@ function resizeCanvas() {
     }
 
     // Oyun elemanlarının boyutlarını güncelle
-    const scale = canvas.width / 800; // 800 orijinal genişlik
+    const scale = canvas.width / 800;
 
     // Paddle boyutlarını güncelle
     paddle.width = 100 * scale;
@@ -469,8 +478,16 @@ function resizeCanvas() {
     // Top boyutunu güncelle
     ball.size = 10 * scale;
 
+    // Pozisyonları yeni boyutlara göre ayarla
+    paddle.x = paddleRatioX * canvas.width;
+    paddle.y = playerId === 2 ? (50 * scale) : (canvas.height - paddle.height - 10);
+    opponentPaddle.x = opponentRatioX * canvas.width;
+    opponentPaddle.y = playerId === 2 ? (canvas.height - paddle.height - 10) : (50 * scale);
+    ball.x = ballRatioX * canvas.width;
+    ball.y = ballRatioY * canvas.height;
+
     // Font boyutlarını güncelle
-    const fontSize = Math.max(16 * scale, 12); // minimum 12px
+    const fontSize = Math.max(16 * scale, 12);
     ctx.font = `${fontSize}px Arial`;
 }
 
