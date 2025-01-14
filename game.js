@@ -296,7 +296,6 @@ function startMultiplayer() {
     waitingForOpponent = true;
 
     ws.on('connect', () => {
-        console.log('Sunucuya bağlandı');
         const urlParams = new URLSearchParams(window.location.search);
         let roomId = urlParams.get('room');
         
@@ -311,13 +310,11 @@ function startMultiplayer() {
     });
 
     ws.on('connect_error', (error) => {
-        console.error('Bağlantı hatası:', error);
         alert('Sunucuya bağlanılamadı!');
     });
 
     ws.on('init', (data) => {
         playerId = data.playerId;
-        console.log('Player ID:', playerId);
         
         // Skorları sıfırla
         player1Score = 0;
@@ -373,16 +370,8 @@ function startMultiplayer() {
 
     // Skor güncelleme olayını dinle
     ws.on('score_update', (data) => {
-        console.log('Skor güncelleme alındı:', data);
         player1Score = data.player1Score;
         player2Score = data.player2Score;
-        
-        // Debug için skoru yazdır
-        console.log('Güncel skorlar:', {
-            player1Score,
-            player2Score,
-            playerId
-        });
     });
 }
 
@@ -549,12 +538,8 @@ document.addEventListener('click', () => {
 // Ses çalma fonksiyonu
 function playSound(sound) {
     if (isSoundEnabled && sound) {
-        // Sesi baştan başlat
         sound.currentTime = 0;
-        // Sesi çal
-        sound.play().catch(error => {
-            console.log('Ses çalma hatası:', error);
-        });
+        sound.play().catch(() => {});
     }
 }
 

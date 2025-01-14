@@ -6,13 +6,6 @@ const cors = require('cors');
 const app = express();
 const httpServer = createServer(app);
 
-// Debug mesajları
-const debug = (...args) => {
-    console.log(new Date().toISOString(), ...args);
-};
-
-debug('Server starting...');
-
 // Express ayarları
 app.set('trust proxy', true);
 app.disable('x-powered-by');
@@ -38,12 +31,10 @@ const io = new Server(httpServer, {
 
 // Basit endpoint'ler
 app.get('/', (req, res) => {
-    debug('Root endpoint called');
     res.send('Server is running');
 });
 
 app.get('/health', (req, res) => {
-    debug('Health check endpoint called');
     res.json({ 
         status: 'ok',
         timestamp: new Date().toISOString(),
@@ -55,7 +46,6 @@ app.get('/health', (req, res) => {
 
 // Hata yakalama
 app.use((err, req, res, next) => {
-    debug('Error:', err);
     res.status(500).json({ error: 'Internal server error' });
 });
 
@@ -64,18 +54,14 @@ const rooms = new Map();
 
 // Socket.IO olayları
 io.on('connection', (socket) => {
-    debug('New connection:', socket.id);
-
     socket.on('join', (data) => {
         try {
-            debug('Join attempt:', { socketId: socket.id, roomId: data.roomId });
             const roomId = data.roomId;
             
             if (!rooms.has(roomId)) {
                 rooms.set(roomId, [socket.id]);
                 socket.join(roomId);
                 socket.emit('init', { playerId: 1 });
-                debug('Created new room:', roomId);
             } else {
                 const room = rooms.get(roomId);
                 if (room.length < 2) {
@@ -83,14 +69,11 @@ io.on('connection', (socket) => {
                     socket.join(roomId);
                     socket.emit('init', { playerId: 2 });
                     io.to(roomId).emit('start');
-                    debug('Joined existing room:', roomId);
                 } else {
-                    debug('Room full:', roomId);
                     socket.emit('error', { message: 'Room is full' });
                 }
             }
         } catch (error) {
-            debug('Error in join:', error);
             socket.emit('error', { message: 'Failed to join room' });
         }
     });
@@ -102,9 +85,7 @@ io.on('connection', (socket) => {
                 const roomId = rooms[1];
                 socket.broadcast.to(roomId).emit('opponent_update', data);
             }
-        } catch (error) {
-            debug('Error in paddle_update:', error);
-        }
+        } catch (error) {}
     });
 
     socket.on('ball_update', (data) => {
@@ -114,13 +95,10 @@ io.on('connection', (socket) => {
                 const roomId = rooms[1];
                 socket.broadcast.to(roomId).emit('ball_sync', data);
             }
-        } catch (error) {
-            debug('Error in ball_update:', error);
-        }
+        } catch (error) {}
     });
 
     socket.on('disconnect', () => {
-        debug('Client disconnected:', socket.id);
         try {
             rooms.forEach((players, roomId) => {
                 const index = players.indexOf(socket.id);
@@ -128,20 +106,12 @@ io.on('connection', (socket) => {
                     players.splice(index, 1);
                     if (players.length === 0) {
                         rooms.delete(roomId);
-                        debug('Room deleted:', roomId);
                     } else {
                         io.to(roomId).emit('opponent_left');
-                        debug('Opponent left room:', roomId);
                     }
                 }
             });
-        } catch (error) {
-            debug('Error in disconnect:', error);
-        }
-    });
-
-    socket.on('error', (error) => {
-        debug('Socket error:', error);
+        } catch (error) {}
     });
 
     // Skor güncelleme olayını dinle
@@ -150,40 +120,17 @@ io.on('connection', (socket) => {
             const socketRooms = Array.from(socket.rooms);
             if (socketRooms.length > 1) {
                 const roomId = socketRooms[1];
-                
-                // Skoru tüm odaya yayınla (gönderen dahil)
                 io.in(roomId).emit('score_update', {
                     player1Score: data.player1Score,
                     player2Score: data.player2Score,
                     winner: data.winner,
                     timestamp: data.timestamp
                 });
-                
-                debug('Skor güncelleme yayınlandı:', {
-                    room: roomId,
-                    scores: {
-                        player1: data.player1Score,
-                        player2: data.player2Score
-                    }
-                });
             }
-        } catch (error) {
-            debug('Skor güncelleme hatası:', error);
-        }
+        } catch (error) {}
     });
 });
 
 // Sunucuyu başlat
 const PORT = process.env.PORT || 3000;
-
-debug('Starting server with config:', {
-    port: PORT,
-    env: process.env.NODE_ENV,
-    nodeVersion: process.version
-});
-
-httpServer.listen(PORT, () => {
-    debug(`Server is running on port ${PORT}`);
-    debug('Environment:', process.env.NODE_ENV);
-    debug('Process ID:', process.pid);
-}); 
+httpServer.listen(PORT); 
