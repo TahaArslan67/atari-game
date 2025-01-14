@@ -297,13 +297,11 @@ function startMultiplayer() {
             paddle.color = '#ff0000';
             opponentPaddle.y = 550;
             opponentPaddle.color = '#fff';
-            ball.dy = ball.speed;
         } else {
             paddle.y = 550;
             paddle.color = '#fff';
             opponentPaddle.y = 50;
             opponentPaddle.color = '#ff0000';
-            ball.dy = -ball.speed;
         }
     });
 
@@ -318,12 +316,18 @@ function startMultiplayer() {
     });
 
     ws.on('ball_sync', (data) => {
+        // Sadece Player 2 top verilerini senkronize eder
         if (playerId === 2) {
-            ball.x = data.ball.x;
-            ball.y = data.ball.y;
+            const timeDiff = Date.now() - data.timestamp;
+            const speedFactor = timeDiff / 16; // 16ms = yaklaşık 60fps
+
+            // Top pozisyonunu ve hızını güncelle
+            ball.x = data.ball.x + (data.ball.dx * speedFactor);
+            ball.y = data.ball.y + (data.ball.dy * speedFactor);
             ball.dx = data.ball.dx;
             ball.dy = data.ball.dy;
             ball.speed = data.ball.speed;
+            ball.isWaiting = data.ball.isWaiting;
         }
     });
 
@@ -344,7 +348,7 @@ function startMultiplayer() {
 // Paddle pozisyonunu daha sık gönder
 function sendPaddlePosition() {
     if (ws && ws.connected) {
-        ws.volatile.emit('paddle_update', {
+        ws.emit('paddle_update', {
             position: paddle.x,
             timestamp: Date.now()
         });
@@ -354,13 +358,14 @@ function sendPaddlePosition() {
 // Top pozisyonunu daha sık gönder
 function sendBallPosition() {
     if (ws && ws.connected && playerId === 1) {
-        ws.volatile.emit('ball_update', {
+        ws.emit('ball_update', {
             ball: {
                 x: ball.x,
                 y: ball.y,
                 dx: ball.dx,
                 dy: ball.dy,
                 speed: ball.speed,
+                isWaiting: ball.isWaiting,
                 timestamp: Date.now()
             }
         });
@@ -392,6 +397,9 @@ let lastUpdateTime = Date.now();
 
 // Oyun döngüsü
 function update() {
+    const currentTime = Date.now();
+    const deltaTime = currentTime - lastUpdateTime;
+
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     if (waitingForOpponent && isMultiplayer) {
@@ -407,24 +415,16 @@ function update() {
 
     // Skor tablosunu göster
     if (!isMultiplayer) {
-        // Tek oyunculu mod skoru
         ctx.fillStyle = '#fff';
         ctx.font = '24px Arial';
         ctx.textAlign = 'left';
         ctx.fillText(`Skor: ${score}`, 10, 30);
     } else {
-        // Çok oyunculu mod skoru
         ctx.fillStyle = '#fff';
         ctx.font = '24px Arial';
         ctx.textAlign = 'center';
-        
-        // Player 1 skoru (üst)
         ctx.fillText(`Player 1: ${player1Score}`, canvas.width / 4, 30);
-        
-        // Player 2 skoru (alt)
         ctx.fillText(`Player 2: ${player2Score}`, canvas.width * 3 / 4, 30);
-        
-        // Top hızı
         ctx.font = '16px Arial';
         ctx.textAlign = 'left';
         ctx.fillText(`Top Hızı: ${Math.round(ball.speed * 10) / 10}`, 10, 60);
@@ -435,15 +435,16 @@ function update() {
     drawOpponentPaddle();
 
     movePaddle();
-    moveBall();
+    
+    // Çok oyunculu modda sadece Player 1 topu hareket ettirir
+    if (!isMultiplayer || (isMultiplayer && playerId === 1)) {
+        moveBall();
+    }
 
-    if (isMultiplayer) {
-        // Daha sık güncelleme gönder
-        if (Date.now() - lastUpdateTime > 16) { // ~60fps
-            sendPaddlePosition();
-            sendBallPosition();
-            lastUpdateTime = Date.now();
-        }
+    if (isMultiplayer && deltaTime >= 16) { // ~60fps
+        sendPaddlePosition();
+        sendBallPosition();
+        lastUpdateTime = currentTime;
     }
 
     requestAnimationFrame(update);
