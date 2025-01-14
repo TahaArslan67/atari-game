@@ -46,7 +46,7 @@ let waitingForOpponent = false;
 
 // Ses efektleri
 const startSound = new Audio('sounds/baslangicsesi');
-const hittingSound = new Audio('sounds/hit.mp3'); 
+const hittingSound = new Audio('C:\Users\MONSTER\Desktop\atari-game\sounds\hit.mp3'); 
 const scoreSound = new Audio('sounds/score.mp3');
 
 let isSoundEnabled = true;
@@ -103,7 +103,7 @@ function moveBall() {
     if (nextX + ball.size > canvas.width || nextX - ball.size < 0) {
         ball.dx *= -1;
         playSound(hittingSound);
-        alert('hitting sesi çalışmadı');
+       
     } else {
         ball.x = nextX;
     }
@@ -113,7 +113,7 @@ function moveBall() {
         if (!isMultiplayer) {
             ball.dy *= -1;
             playSound(hittingSound);
-            alert('hitting sesi çalışmadı');
+            
         } else {
             // Üst sınıra çarpma (Player 2 kaybetti)
             updateScore(1);
@@ -142,7 +142,7 @@ function moveBall() {
         nextX - ball.size < currentPaddle.x + currentPaddle.width) {
         
         playSound(hittingSound);
-        alert('hitting sesi çalışmadı');
+        
 
         // Top yönünü değiştir
         ball.dy = currentPaddle === paddle ? -ball.speed : ball.speed;
