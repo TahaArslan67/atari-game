@@ -449,46 +449,40 @@ function update() {
     requestAnimationFrame(update);
 }
 
-// Çoklu oyuncu butonu ekle
-const gameContainer = document.querySelector('.game-container');
-const multiplayerBtn = document.createElement('button');
-multiplayerBtn.textContent = 'Çoklu Oyuncu';
-multiplayerBtn.style.marginTop = '10px';
+// Butonları HTML'den al
+const multiplayerBtn = document.getElementById('multiplayerBtn');
+const soundBtn = document.getElementById('soundBtn');
+
+// Buton olaylarını ekle
 multiplayerBtn.onclick = () => {
     playSound(startSound);
     startMultiplayer();
 };
-gameContainer.appendChild(multiplayerBtn);
 
-// Ses açma/kapama butonu ekle
-const soundBtn = document.createElement('button');
-soundBtn.textContent = 'Ses: Açık';
-soundBtn.style.marginTop = '10px';
-soundBtn.style.marginLeft = '10px';
 soundBtn.onclick = () => {
     isSoundEnabled = !isSoundEnabled;
     soundBtn.textContent = `Ses: ${isSoundEnabled ? 'Açık' : 'Kapalı'}`;
 };
-gameContainer.appendChild(soundBtn);
 
-// Ses çalma fonksiyonu
-function playSound(sound) {
-    if (isSoundEnabled) {
-        try {
-            // Sesi baştan başlat
-            sound.currentTime = 0;
-            // Sesi çal
-            const playPromise = sound.play();
-            if (playPromise !== undefined) {
-                playPromise.catch(error => {
-                    console.log("Ses çalma hatası:", error);
-                });
-            }
-        } catch (error) {
-            console.log("Ses çalma hatası:", error);
-        }
+// Canvas boyutlarını responsive yap
+function resizeCanvas() {
+    const container = document.querySelector('.game-container');
+    const containerWidth = container.clientWidth;
+    const maxWidth = 800;
+    const aspectRatio = 600 / 800;
+
+    if (containerWidth < maxWidth) {
+        canvas.width = containerWidth - 40; // padding için
+        canvas.height = canvas.width * aspectRatio;
+    } else {
+        canvas.width = maxWidth;
+        canvas.height = maxWidth * aspectRatio;
     }
 }
+
+// Pencere boyutu değiştiğinde canvas'ı yeniden boyutlandır
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
 
 // Oyun başlangıç sesi - kullanıcı etkileşimi sonrası çal
 document.addEventListener('click', () => {

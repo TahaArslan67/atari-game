@@ -3,13 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Atari Oyunu</title>
+    <title>Atari Pong Oyunu</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 </head>
 <body>
-    <div class="game-container">
+    <h1 class="game-title fade-in">Atari Pong Oyunu</h1>
+    <div class="game-container fade-in">
         <canvas id="gameCanvas"></canvas>
+        <div class="button-container">
+            <button id="multiplayerBtn" class="fade-in">Çoklu Oyuncu</button>
+            <button id="soundBtn" class="fade-in">Ses: Açık</button>
+        </div>
     </div>
     <script src="game.js"></script>
 </body>
