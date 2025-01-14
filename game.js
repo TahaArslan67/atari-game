@@ -444,54 +444,41 @@ let lastUpdateTime = Date.now();
 
 // Canvas boyutlarını responsive yap
 function resizeCanvas() {
-    const container = document.querySelector('.game-container');
+    const container = canvas.parentElement;
     const containerWidth = container.clientWidth;
-    const maxWidth = 800;
-    const aspectRatio = 600 / 800;
-
-    // Canvas boyutlarını güncelle
-    if (containerWidth < maxWidth) {
-        canvas.width = containerWidth - 20;
-        canvas.height = canvas.width * aspectRatio;
-    } else {
-        canvas.width = maxWidth;
-        canvas.height = maxWidth * aspectRatio;
-    }
-
-    // Oyun elemanlarının boyutlarını güncelle
-    const scale = canvas.width / 800;
-
-    // Paddle boyutlarını güncelle
-    paddle.width = Math.max(60 * scale, 40);
-    paddle.height = Math.max(8 * scale, 5);
-    opponentPaddle.width = paddle.width;
-    opponentPaddle.height = paddle.height;
-
-    // Paddle pozisyonlarını ayarla
-    const paddleMargin = 20 * scale;
     
-    if (playerId === 2) {
-        paddle.y = paddleMargin;
-        opponentPaddle.y = canvas.height - paddleMargin - opponentPaddle.height;
-    } else {
-        paddle.y = canvas.height - paddleMargin - paddle.height;
-        opponentPaddle.y = paddleMargin;
-    }
-
-    // Paddle'ların x pozisyonlarını ekran içinde tut
-    paddle.x = Math.min(Math.max(paddle.x, 0), canvas.width - paddle.width);
-    opponentPaddle.x = Math.min(Math.max(opponentPaddle.x, 0), canvas.width - opponentPaddle.width);
-
-    // Top boyutunu güncelle
-    ball.size = Math.max(6 * scale, 4);
-
-    // Topun pozisyonunu ekran içinde tut
-    ball.x = Math.min(Math.max(ball.x, ball.size), canvas.width - ball.size);
-    ball.y = Math.min(Math.max(ball.y, ball.size), canvas.height - ball.size);
-
+    // Maksimum genişlik sınırlaması
+    const maxWidth = Math.min(containerWidth - 20, 800);
+    
+    // En-boy oranını koru (4:3)
+    const aspectRatio = 3/4;
+    const newWidth = Math.min(maxWidth, containerWidth);
+    const newHeight = newWidth * aspectRatio;
+    
+    // Canvas boyutlarını güncelle
+    canvas.style.width = `${newWidth}px`;
+    canvas.style.height = `${newHeight}px`;
+    canvas.width = newWidth;
+    canvas.height = newHeight;
+    
+    // Oyun elemanlarının ölçeklerini güncelle
+    const scale = newWidth / 800; // 800 referans genişlik
+    paddle.width = Math.max(10, Math.floor(80 * scale));
+    paddle.height = Math.max(5, Math.floor(10 * scale));
+    ball.size = Math.max(3, Math.floor(5 * scale));
+    
     // Font boyutlarını güncelle
-    const fontSize = Math.max(14 * scale, 10);
-    ctx.font = `${fontSize}px Arial`;
+    const baseFontSize = Math.max(12, Math.floor(16 * scale));
+    ctx.font = `${baseFontSize}px Poppins`;
+    
+    // Raketlerin pozisyonlarını güncelle
+    paddle.y = (canvas.height - paddle.height) / 2;
+    
+    // Topun pozisyonunu güncelle
+    if (!isMultiplayer || (isMultiplayer && playerId === 1)) {
+        ball.x = canvas.width / 2;
+        ball.y = canvas.height / 2;
+    }
 }
 
 // Oyun döngüsü
@@ -594,6 +581,13 @@ soundBtn.onclick = () => {
 // Pencere boyutu değiştiğinde canvas'ı yeniden boyutlandır
 window.addEventListener('resize', () => {
     resizeCanvas();
+    // Yeni boyutları sunucuya bildir
+    if (ws && ws.connected && isMultiplayer) {
+        sendPaddlePosition();
+        if (playerId === 1) {
+            sendBallPosition();
+        }
+    }
 });
 
 // İlk yükleme için canvas'ı boyutlandır

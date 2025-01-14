@@ -92,94 +92,98 @@ button:active {
 
 /* Responsive Tasarım */
 @media (max-width: 850px) {
+    body {
+        padding: 10px;
+    }
+
     .game-container {
-        width: 95%;
+        width: 100%;
+        max-width: 600px;
         padding: 15px;
+        margin: 10px auto;
     }
     
     canvas {
         width: 100%;
-        max-width: 500px;
+        max-width: 450px;
         height: auto;
+        margin: 10px auto;
     }
     
     .game-title {
         font-size: 28px;
-    }
-    
-    button {
-        padding: 10px 20px;
-        font-size: 14px;
+        margin: 15px 0;
     }
 }
 
 @media (max-width: 480px) {
     body {
-        padding: 10px;
+        padding: 5px;
+        justify-content: center;
         min-height: 100vh;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: flex-start;
     }
 
     .game-container {
         width: 100%;
-        max-width: 350px;
-        min-height: auto;
+        max-width: 100%;
         padding: 10px;
-        margin: 0 auto;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        background: rgba(0, 0, 0, 0.2);
+        margin: 0;
+        border-radius: 0;
+        background: none;
+        box-shadow: none;
+        backdrop-filter: none;
     }
     
     canvas {
         width: 100%;
-        max-width: 320px;
+        max-width: 300px;
         height: auto;
         margin: 10px auto;
-        display: block;
+        border: 1px solid rgba(255, 255, 255, 0.2);
     }
     
     .game-title {
-        font-size: 20px;
-        margin: 10px auto;
-        width: 100%;
-        text-align: center;
+        font-size: 24px;
+        margin: 10px 0;
     }
     
     .button-container {
-        flex-direction: column;
-        width: 90%;
+        width: 100%;
+        max-width: 300px;
         gap: 10px;
         margin: 10px auto;
     }
     
     button {
         width: 100%;
-        padding: 10px 20px;
+        max-width: 300px;
+        padding: 10px;
         font-size: 14px;
+        margin: 0 auto;
     }
 
     .mobile-controls {
         position: fixed;
         bottom: 20px;
-        left: 50%;
-        transform: translateX(-50%);
-        gap: 180px;
+        left: 0;
+        right: 0;
+        width: 100%;
         display: flex;
         justify-content: center;
-        width: 100%;
+        gap: 200px;
         padding: 0 20px;
+        z-index: 1000;
     }
 
     .control-button {
-        width: 50px;
-        height: 50px;
-        background: rgba(74, 144, 226, 0.6);
+        width: 45px;
+        height: 45px;
+        background: rgba(74, 144, 226, 0.7);
+    }
+    
+    .control-button svg {
+        width: 20px;
+        height: 20px;
     }
 }
 
@@ -187,25 +191,55 @@ button:active {
 @media (min-width: 481px) and (max-width: 1024px) {
     body {
         padding: 15px;
+        justify-content: center;
     }
 
     .game-container {
         width: 100%;
-        max-width: 600px;
+        max-width: 700px;
+        padding: 20px;
         margin: 0 auto;
-        padding: 15px;
     }
     
     canvas {
         width: 100%;
-        max-width: 500px;
+        max-width: 600px;
         height: auto;
-        margin: 10px auto;
+        margin: 15px auto;
     }
     
     .mobile-controls {
-        bottom: 30px;
-        gap: 250px;
+        position: fixed;
+        bottom: 40px;
+        left: 0;
+        right: 0;
+        display: flex;
+        justify-content: center;
+        gap: 300px;
+        padding: 0 20px;
+    }
+
+    .control-button {
+        width: 55px;
+        height: 55px;
+        background: rgba(74, 144, 226, 0.6);
+    }
+    
+    .control-button svg {
+        width: 25px;
+        height: 25px;
+    }
+}
+
+/* Mobil Kontroller Temel Stili */
+.mobile-controls {
+    display: none;
+}
+
+/* Tablet ve Mobil için kontrolleri göster */
+@media (max-width: 1024px) {
+    .mobile-controls {
+        display: flex;
     }
 }
 
@@ -223,61 +257,5 @@ button:active {
 @media (prefers-color-scheme: dark) {
     body {
         background: linear-gradient(45deg, #121212, #1a1a1a);
-    }
-}
-
-/* Mobil Kontroller */
-.mobile-controls {
-    display: none;
-    position: fixed;
-    bottom: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    gap: 20px;
-    z-index: 1000;
-}
-
-.control-button {
-    width: 60px;
-    height: 60px;
-    background: rgba(74, 144, 226, 0.3);
-    border: 2px solid rgba(255, 255, 255, 0.2);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    backdrop-filter: blur(5px);
-    transition: all 0.2s ease;
-}
-
-.control-button:active {
-    background: rgba(74, 144, 226, 0.5);
-    transform: scale(0.95);
-}
-
-.control-button svg {
-    width: 30px;
-    height: 30px;
-    fill: white;
-}
-
-/* Tablet ve Mobil için kontrolleri göster */
-@media (max-width: 1024px) {
-    .mobile-controls {
-        display: flex;
-    }
-}
-
-/* Mobil için özel ayarlar */
-@media (max-width: 480px) {
-    .control-button {
-        width: 50px;
-        height: 50px;
-    }
-    
-    .control-button svg {
-        width: 25px;
-        height: 25px;
     }
 } 
